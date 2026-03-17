@@ -211,34 +211,48 @@ html, body {
     background: #fff;
     padding: 10mm;
     box-shadow: 0 4px 24px rgba(0,0,0,.3);
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 60mm;
-    gap: 5mm;
+    display: flex;
+    flex-wrap: wrap;
     align-content: start;
+    gap: 4mm;
   }
 }
 
 /* ===== SHARED CARD STYLES (screen + print) ===== */
 .sign-card {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
+  min-width: 60mm;
+  max-width: 250mm;
+  height: 30mm;
+  flex-shrink: 0;
+  direction: rtl;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.sign-card .fold {
+  height: 7.5mm;
+  flex-shrink: 0;
+}
+
+.sign-card .text-zone {
+  height: 15mm;
+  flex-shrink: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6mm 8mm;
-  text-align: center;
+  padding: 0 5mm;
+  white-space: nowrap;
   overflow: hidden;
-  direction: rtl;
+  border-top: 0.4pt dashed var(--sc, rgba(0,0,0,0.25));
+  border-bottom: 0.4pt dashed var(--sc, rgba(0,0,0,0.25));
+  font-size: 14pt;
+  line-height: 1;
 }
 
-.sign-card .card-main {
-  font-size: 18pt;
-  line-height: 1.35;
-  word-break: break-word;
-}
-
-.sign-card .series-name { font-weight: 700; }
-.sign-card .separator   { font-weight: 400; margin: 0 .15em; }
+.sign-card .series-name { font-weight: 600; }
+.sign-card .separator   { font-weight: 400; opacity: .6; margin: 0 .15em; }
 .sign-card .author-name { font-weight: 400; }
 
 
@@ -266,10 +280,14 @@ html, body {
     box-shadow: none;
     padding: 0;
     page-break-after: always;
-    grid-auto-rows: 60mm;
   }
 
   .a4-page:last-child { page-break-after: avoid; }
+
+  .sign-card {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
 </style>
 </head>
@@ -350,8 +368,8 @@ html, body {
 // ===== COLOR MAP =====
 const COLORS = {
   'אחר':         { bg: '#2956AA', text: '#FFFFFF' },
-  'מיוחדים':     { bg: '#FFC980', text: '#603700' },
-  'גיל רך':      { bg: '#FFE9BD', text: '#6E4A00' },
+  'מיוחדים':     { bg: '#2956AA', text: '#FFFFFF' },
+  'גיל רך':      { bg: '#FFC980', text: '#603700' },
   'ילדים':       { bg: '#FFE9BD', text: '#6E4A00' },
   'נוער':        { bg: '#77DFD5', text: '#13534D' },
   'מבוגרות/ים':  { bg: '#F7F7F9', text: '#262A33' },
@@ -366,7 +384,7 @@ const CATEGORY_LABELS = {
   'מבוגרות/ים': 'מבוגרות/ים (18+)',
 };
 
-const CARDS_PER_PAGE = 8; // 2 cols × 4 rows
+const CARDS_PER_PAGE = 18;
 
 let cards = []; // { series, author, category }
 
@@ -473,12 +491,20 @@ function splitCSVLine(line) {
 }
 
 // ===== RENDER =====
+function scoreColor(hex) {
+  // text color at ~30% opacity for score lines
+  return hex + '4D';
+}
+
 function buildCardHTML(card) {
   const colors = COLORS[card.category] || COLORS['אחר'];
-  return `<div class="sign-card" style="background:${colors.bg};color:${colors.text};">
-  <div class="card-main">
+  const sc = scoreColor(colors.text);
+  return `<div class="sign-card" style="background:${colors.bg};color:${colors.text};--sc:${sc};">
+  <div class="fold"></div>
+  <div class="text-zone">
     <span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>
   </div>
+  <div class="fold"></div>
 </div>`;
 }
 
