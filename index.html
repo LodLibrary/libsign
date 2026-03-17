@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -301,7 +303,10 @@ html, body {
 <!-- ===== HEADER ===== -->
 <header class="app-header">
   <h1>📚 יצירת כרטיסי גיל — ספרייה</h1>
-  <button class="btn-print" onclick="window.print()">🖨 הדפס / שמור כ-PDF</button>
+  <div style="display:flex;gap:8px;">
+    <button class="btn-print" onclick="window.print()">🖨 הדפס</button>
+    <button class="btn-print btn-pdf" id="btn-pdf" onclick="savePDF()">📄 שמור PDF</button>
+  </div>
 </header>
 
 <!-- ===== LAYOUT ===== -->
@@ -552,6 +557,43 @@ function render() {
   pane.innerHTML = pages.map(pageCards =>
     `<div class="a4-page">${pageCards.map(buildCardHTML).join('\n')}</div>`
   ).join('\n');
+}
+
+// ===== PDF EXPORT =====
+async function savePDF() {
+  const pages = document.querySelectorAll('.a4-page');
+  if (!pages.length) { alert('אין כרטיסים להורדה'); return; }
+
+  const btn = document.getElementById('btn-pdf');
+  btn.textContent = '⏳ מכין...';
+  btn.disabled = true;
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const A4_W = 210, A4_H = 297;
+
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = await html2canvas(pages[i], {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+      if (i > 0) pdf.addPage();
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const imgH = (canvas.height / canvas.width) * A4_W;
+      pdf.addImage(imgData, 'JPEG', 0, 0, A4_W, Math.min(imgH, A4_H));
+    }
+
+    pdf.save('כרטיסי-ספרייה.pdf');
+  } catch (e) {
+    alert('שגיאה ביצירת PDF: ' + e.message);
+  } finally {
+    btn.textContent = '📄 שמור PDF';
+    btn.disabled = false;
+  }
 }
 
 // ===== KEYBOARD SHORTCUT =====
