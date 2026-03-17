@@ -214,7 +214,8 @@ html, body {
     display: flex;
     flex-wrap: wrap;
     align-content: start;
-    gap: 4mm;
+    column-gap: 4mm;
+    row-gap: 6mm;
   }
 }
 
@@ -224,7 +225,7 @@ html, body {
   flex-direction: column;
   min-width: 60mm;
   max-width: 250mm;
-  height: 30mm;
+  height: 35mm;
   flex-shrink: 0;
   direction: rtl;
   print-color-adjust: exact;
@@ -237,7 +238,7 @@ html, body {
 }
 
 .sign-card .text-zone {
-  height: 15mm;
+  height: 20mm;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -247,7 +248,7 @@ html, body {
   overflow: hidden;
   border-top: 0.4pt dashed var(--sc, rgba(0,0,0,0.25));
   border-bottom: 0.4pt dashed var(--sc, rgba(0,0,0,0.25));
-  font-size: 14pt;
+  font-size: 18pt;
   line-height: 1;
 }
 
