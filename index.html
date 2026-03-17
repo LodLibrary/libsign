@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>יצירת כרטיסי גיל — ספרייה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font: 'Assistant', Arial, sans-serif;
+  --radius: 8px;
+  --ui-bg: #f4f5f7;
+  --panel-bg: #ffffff;
+  --border: #dde0e6;
+  --accent: #2956AA;
+  --accent-text: #fff;
+  --danger: #d63031;
+  --text: #1e2029;
+  --muted: #6b7280;
+}
+
+html, body {
+  font-family: var(--font);
+  background: var(--ui-bg);
+  color: var(--text);
+  height: 100%;
+  font-size: 15px;
+}
+
+/* ===== SCREEN LAYOUT ===== */
+@media screen {
+  .app-header {
+    background: var(--accent);
+    color: #fff;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  }
+
+  .app-header h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .btn-print {
+    background: #fff;
+    color: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    padding: 8px 20px;
+    font-family: var(--font);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-print:hover { background: #e8edf8; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: calc(100vh - 52px);
+  }
+
+  /* ----- Sidebar ----- */
+  .sidebar {
+    background: var(--panel-bg);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .section-title {
+    font-size: .8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .form-group label { font-size: .85rem; font-weight: 600; }
+  .form-group input,
+  .form-group select {
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font);
+    font-size: .95rem;
+    direction: rtl;
+    width: 100%;
+  }
+  .form-group input:focus,
+  .form-group select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: var(--font);
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn-secondary { background: #e8edf8; color: var(--accent); width: 100%; }
+
+  .divider { border: none; border-top: 1px solid var(--border); }
+
+  /* CSV upload */
+  .csv-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .csv-hint { font-size: .78rem; color: var(--muted); }
+  #csv-file { font-size: .85rem; }
+
+  /* Card list */
+  .card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .card-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: .85rem;
+  }
+
+  .card-list-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .card-list-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card-list-series { font-weight: 700; }
+  .card-list-author { color: var(--muted); }
+
+  .btn-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .btn-del:hover { color: var(--danger); background: #ffeaea; }
+
+  .empty-hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: .85rem;
+    padding: 16px;
+  }
+
+  /* ----- Preview pane ----- */
+  .preview-pane {
+    overflow-y: auto;
+    background: #888;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .a4-page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #fff;
+    padding: 10mm;
+    box-shadow: 0 4px 24px rgba(0,0,0,.3);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 60mm;
+    gap: 5mm;
+    align-content: start;
+  }
+}
+
+/* ===== SHARED CARD STYLES (screen + print) ===== */
+.sign-card {
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6mm 8mm;
+  text-align: center;
+  overflow: hidden;
+  direction: rtl;
+}
+
+.sign-card .card-main {
+  font-size: 18pt;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.sign-card .series-name { font-weight: 700; }
+.sign-card .separator   { font-weight: 400; margin: 0 .15em; }
+.sign-card .author-name { font-weight: 400; }
+
+.sign-card .cat-label {
+  font-size: 10pt;
+  font-weight: 600;
+  margin-top: 3mm;
+  opacity: .72;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+
+  .app-header,
+  .sidebar,
+  .preview-pane > *:not(.a4-page) { display: none !important; }
+
+  html, body { background: white; height: auto; }
+
+  .layout { display: block; height: auto; }
+
+  .preview-pane {
+    background: white;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .a4-page {
+    width: 100%;
+    min-height: auto;
+    box-shadow: none;
+    padding: 0;
+    page-break-after: always;
+    grid-auto-rows: 60mm;
+  }
+
+  .a4-page:last-child { page-break-after: avoid; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="app-header">
+  <h1>📚 יצירת כרטיסי גיל — ספרייה</h1>
+  <button class="btn-print" onclick="window.print()">🖨 הדפס / שמור כ-PDF</button>
+</header>
+
+<!-- ===== LAYOUT ===== -->
+<div class="layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+
+    <!-- Add card form -->
+    <div>
+      <div class="section-title">הוסף כרטיס</div>
+      <div class="form-group">
+        <label for="inp-series">שם הסדרה / הספר</label>
+        <input id="inp-series" type="text" placeholder="למשל: הארי פוטר" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label for="inp-author">שם המחבר/ת</label>
+        <input id="inp-author" type="text" placeholder="למשל: ג'יי.קיי. רולינג" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label for="inp-cat">קטגוריית גיל</label>
+        <select id="inp-cat">
+          <option value="גיל רך">גיל רך (0–6)</option>
+          <option value="ילדים">ילדים (7–12)</option>
+          <option value="נוער">נוער (13–18)</option>
+          <option value="מבוגרות/ים">מבוגרות/ים (18+)</option>
+          <option value="מיוחדים">מיוחדים</option>
+          <option value="אחר">אחר</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="addCard()">+ הוסף כרטיס</button>
+    </div>
+
+    <hr class="divider"/>
+
+    <!-- CSV import -->
+    <div class="csv-area">
+      <div class="section-title">ייבוא CSV</div>
+      <p class="csv-hint">עמודות: <code>series,author,category</code> (שורת כותרת נדרשת)</p>
+      <input type="file" id="csv-file" accept=".csv,text/csv"/>
+      <button class="btn btn-secondary" onclick="importCSV()">ייבא קובץ CSV</button>
+    </div>
+
+    <hr class="divider"/>
+
+    <!-- Clear all -->
+    <button class="btn btn-secondary" style="color:#c0392b" onclick="clearAll()">🗑 נקה הכל</button>
+
+    <hr class="divider"/>
+
+    <!-- Card list -->
+    <div>
+      <div class="section-title">כרטיסים (<span id="count">0</span>)</div>
+      <div class="card-list" id="card-list">
+        <div class="empty-hint">עדיין אין כרטיסים.<br/>הוסף למעלה או ייבא CSV.</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ===== PREVIEW PANE ===== -->
+  <main class="preview-pane" id="preview-pane">
+    <!-- A4 pages injected here by JS -->
+  </main>
+
+</div>
+
+<script>
+// ===== COLOR MAP =====
+const COLORS = {
+  'אחר':         { bg: '#2956AA', text: '#FFFFFF' },
+  'מיוחדים':     { bg: '#FFC980', text: '#603700' },
+  'גיל רך':      { bg: '#FFE9BD', text: '#6E4A00' },
+  'ילדים':       { bg: '#FFE9BD', text: '#6E4A00' },
+  'נוער':        { bg: '#77DFD5', text: '#13534D' },
+  'מבוגרות/ים':  { bg: '#F7F7F9', text: '#262A33' },
+};
+
+const CATEGORY_LABELS = {
+  'אחר':        'אחר',
+  'מיוחדים':    'מיוחדים',
+  'גיל רך':     'גיל רך (0–6)',
+  'ילדים':      'ילדים (7–12)',
+  'נוער':       'נוער (13–18)',
+  'מבוגרות/ים': 'מבוגרות/ים (18+)',
+};
+
+const CARDS_PER_PAGE = 8; // 2 cols × 4 rows
+
+let cards = []; // { series, author, category }
+
+// ===== HELPERS =====
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function resolveCategory(raw) {
+  const key = (raw || '').trim();
+  // Try exact match, then lowercase, then fallback
+  if (COLORS[key]) return key;
+  const lower = key.toLowerCase();
+  const aliases = {
+    'other': 'אחר', 'special': 'מיוחדים',
+    '0-6': 'גיל רך', 'גיל-רך': 'גיל רך', 'baby': 'גיל רך',
+    '7-12': 'ילדים', 'children': 'ילדים', 'kids': 'ילדים',
+    '13-18': 'נוער', 'teen': 'נוער', 'teens': 'נוער', 'youth': 'נוער',
+    '18+': 'מבוגרות/ים', 'adults': 'מבוגרות/ים', 'adult': 'מבוגרות/ים',
+    'מבוגרים': 'מבוגרות/ים',
+  };
+  return aliases[lower] || 'אחר';
+}
+
+// ===== ADD / REMOVE =====
+function addCard(series, author, category) {
+  if (series === undefined) {
+    series   = document.getElementById('inp-series').value.trim();
+    author   = document.getElementById('inp-author').value.trim();
+    category = document.getElementById('inp-cat').value;
+    if (!series) { document.getElementById('inp-series').focus(); return; }
+    document.getElementById('inp-series').value = '';
+    document.getElementById('inp-author').value = '';
+    document.getElementById('inp-series').focus();
+  }
+  category = resolveCategory(category);
+  cards.push({ series, author, category });
+  render();
+}
+
+function removeCard(idx) {
+  cards.splice(idx, 1);
+  render();
+}
+
+function clearAll() {
+  if (cards.length === 0 || confirm('למחוק את כל הכרטיסים?')) {
+    cards = [];
+    render();
+  }
+}
+
+// ===== CSV IMPORT =====
+function importCSV() {
+  const file = document.getElementById('csv-file').files[0];
+  if (!file) { alert('בחרי/בחר קובץ CSV תחילה.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    parseCSV(text);
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return;
+
+  // Detect header
+  const headerLine = lines[0].toLowerCase();
+  const hasSeries = headerLine.includes('series') || headerLine.includes('סדרה');
+  const startIdx  = hasSeries ? 1 : 0;
+
+  let added = 0;
+  for (let i = startIdx; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    if (cols.length < 1) continue;
+    const series   = (cols[0] || '').trim();
+    const author   = (cols[1] || '').trim();
+    const category = resolveCategory(cols[2] || 'אחר');
+    if (series) { cards.push({ series, author, category }); added++; }
+  }
+  render();
+  if (added) alert(`יובאו ${added} כרטיסים.`);
+}
+
+function splitCSVLine(line) {
+  // Simple CSV split supporting double-quoted fields
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      result.push(cur); cur = '';
+    } else {
+      cur += c;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+// ===== RENDER =====
+function buildCardHTML(card) {
+  const colors = COLORS[card.category] || COLORS['אחר'];
+  const label  = CATEGORY_LABELS[card.category] || card.category;
+  return `<div class="sign-card" style="background:${colors.bg};color:${colors.text};">
+  <div class="card-main">
+    <span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>
+  </div>
+  <div class="cat-label">${escHtml(label)}</div>
+</div>`;
+}
+
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+function render() {
+  // Update count
+  document.getElementById('count').textContent = cards.length;
+
+  // Update sidebar card list
+  const list = document.getElementById('card-list');
+  if (!cards.length) {
+    list.innerHTML = '<div class="empty-hint">עדיין אין כרטיסים.<br/>הוסף למעלה או ייבא CSV.</div>';
+  } else {
+    list.innerHTML = cards.map((c, i) => {
+      const col = (COLORS[c.category] || COLORS['אחר']).bg;
+      return `<div class="card-list-item">
+        <span class="card-list-dot" style="background:${col}"></span>
+        <span class="card-list-text">
+          <span class="card-list-series">${escHtml(c.series)}</span>
+          ${c.author ? `<span class="card-list-author"> — ${escHtml(c.author)}</span>` : ''}
+        </span>
+        <button class="btn-del" title="מחק" onclick="removeCard(${i})">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  // Update preview pages
+  const pane = document.getElementById('preview-pane');
+  if (!cards.length) {
+    pane.innerHTML = `<div style="color:#ddd;font-size:1.2rem;margin-top:80px;text-align:center;">הוסף כרטיסים כדי לראות תצוגה מקדימה</div>`;
+    return;
+  }
+
+  const pages = chunk(cards, CARDS_PER_PAGE);
+  pane.innerHTML = pages.map(pageCards =>
+    `<div class="a4-page">${pageCards.map(buildCardHTML).join('\n')}</div>`
+  ).join('\n');
+}
+
+// ===== KEYBOARD SHORTCUT =====
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') addCard();
+});
+
+// ===== INIT =====
+render();
+</script>
+</body>
+</html>
