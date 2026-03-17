@@ -221,7 +221,6 @@ html, body {
 
 /* ===== SHARED CARD STYLES (screen + print) ===== */
 .sign-card {
-  border-radius: 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -242,12 +241,6 @@ html, body {
 .sign-card .separator   { font-weight: 400; margin: 0 .15em; }
 .sign-card .author-name { font-weight: 400; }
 
-.sign-card .cat-label {
-  font-size: 10pt;
-  font-weight: 600;
-  margin-top: 3mm;
-  opacity: .72;
-}
 
 /* ===== PRINT STYLES ===== */
 @media print {
@@ -482,12 +475,10 @@ function splitCSVLine(line) {
 // ===== RENDER =====
 function buildCardHTML(card) {
   const colors = COLORS[card.category] || COLORS['אחר'];
-  const label  = CATEGORY_LABELS[card.category] || card.category;
   return `<div class="sign-card" style="background:${colors.bg};color:${colors.text};">
   <div class="card-main">
     <span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>
   </div>
-  <div class="cat-label">${escHtml(label)}</div>
 </div>`;
 }
 
