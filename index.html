@@ -338,6 +338,13 @@ html, body {
           <option value="אחר">אחר</option>
         </select>
       </div>
+      <div class="form-group">
+        <label for="inp-dir">כיוון טקסט</label>
+        <select id="inp-dir">
+          <option value="rtl">עברית ← (ימין לשמאל)</option>
+          <option value="ltr">English → (Left to Right)</option>
+        </select>
+      </div>
       <button class="btn btn-primary" id="btn-submit" onclick="submitForm()">+ הוסף כרטיס</button>
       <button class="btn btn-secondary" id="btn-cancel" style="display:none;margin-top:6px;" onclick="cancelEdit()">ביטול</button>
     </div>
@@ -428,13 +435,14 @@ function submitForm() {
   const series   = document.getElementById('inp-series').value.trim();
   const author   = document.getElementById('inp-author').value.trim();
   const category = resolveCategory(document.getElementById('inp-cat').value);
+  const dir      = document.getElementById('inp-dir').value;
   if (!series) { document.getElementById('inp-series').focus(); return; }
 
   if (editingIdx >= 0) {
-    cards[editingIdx] = { series, author, category };
+    cards[editingIdx] = { series, author, category, dir };
     cancelEdit();
   } else {
-    cards.push({ series, author, category });
+    cards.push({ series, author, category, dir });
     document.getElementById('inp-series').value = '';
     document.getElementById('inp-author').value = '';
     document.getElementById('inp-series').focus();
@@ -442,10 +450,10 @@ function submitForm() {
   render();
 }
 
-function addCard(series, author, category) {
+function addCard(series, author, category, dir) {
   // kept for CSV import path
   category = resolveCategory(category || 'אחר');
-  cards.push({ series, author, category });
+  cards.push({ series, author, category, dir: dir || 'rtl' });
   render();
 }
 
@@ -455,6 +463,7 @@ function editCard(idx) {
   document.getElementById('inp-series').value = c.series;
   document.getElementById('inp-author').value  = c.author || '';
   document.getElementById('inp-cat').value     = c.category;
+  document.getElementById('inp-dir').value     = c.dir || 'rtl';
   document.getElementById('form-title').textContent  = 'ערוך כרטיס';
   document.getElementById('btn-submit').textContent  = '✔ שמור שינויים';
   document.getElementById('btn-cancel').style.display = '';
@@ -545,8 +554,9 @@ function scoreColor(hex) {
 
 function buildCardHTML(card) {
   const colors = COLORS[card.category] || COLORS['אחר'];
-  const sc = scoreColor(colors.text);
-  return `<div class="sign-card" style="background:${colors.bg};color:${colors.text};--sc:${sc};">
+  const sc  = scoreColor(colors.text);
+  const dir = card.dir || 'rtl';
+  return `<div class="sign-card" style="background:${colors.bg};color:${colors.text};--sc:${sc};direction:${dir};">
   <div class="fold"></div>
   <div class="text-zone">
     <span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>
@@ -577,6 +587,7 @@ function render() {
         <span class="card-list-text">
           <span class="card-list-series">${escHtml(c.series)}</span>
           ${c.author ? `<span class="card-list-author"> — ${escHtml(c.author)}</span>` : ''}
+          ${c.dir === 'ltr' ? '<span class="card-list-author"> · EN</span>' : ''}
         </span>
         <button class="btn-edit" title="ערוך" onclick="editCard(${i})">✎</button>
         <button class="btn-del" title="מחק" onclick="removeCard(${i})">✕</button>
