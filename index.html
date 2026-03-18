@@ -482,55 +482,46 @@ html, body {
 
           <div id="column-sign" style="width:1684px;height:1190px;background:#fff;position:relative;overflow:hidden;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
 
-            <!-- Border frame -->
-            <div style="position:absolute;left:26.92px;top:26.71px;width:1630.16px;height:1137.07px;outline:18.31px solid #2956AA;outline-offset:-9.15px;z-index:10;pointer-events:none;"></div>
+            <!-- Static SVG layer: arrows, divider, border (exact paths from design) -->
+            <svg style="position:absolute;left:0;top:0;pointer-events:none;" width="1684" height="1190" viewBox="0 0 1684 1190" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Top right-pointing arrow -->
+              <path d="M1127.29 410.941L1181.92 465.574L1182.63 466.285L1181.92 466.992L1127.03 521.367L1126.31 522.078L1125.6 521.352L1117.36 512.849L1116.67 512.135L1117.38 511.438L1156.6 472.951H502.011V459.612H1156.63L1117.63 420.862L1116.93 420.166L1117.62 419.456L1125.86 410.952L1126.57 410.224L1127.29 410.941Z" fill="#2956AA" stroke="#2956AA" stroke-width="2"/>
+              <!-- Horizontal divider -->
+              <path d="M1659 594.031H25V596.466H1659V594.031Z" fill="#2956AA"/>
+              <!-- Bottom left-pointing arrow -->
+              <path d="M556.936 1082.01L502.304 1027.37L501.594 1026.66L502.307 1025.95L557.198 971.58L557.916 970.869L558.619 971.594L566.866 980.098L567.557 980.812L566.849 981.509L527.621 1020H1182.21V1033.33H527.598L566.596 1072.08L567.296 1072.78L566.608 1073.49L558.361 1081.99L557.655 1082.72L556.936 1082.01Z" fill="#2956AA" stroke="#2956AA" stroke-width="2"/>
+              <!-- Border -->
+              <rect x="26.9187" y="26.714" width="1630.16" height="1137.07" stroke="#2956AA" stroke-width="18.31"/>
+            </svg>
 
-            <!-- Decorative background -->
-            <div style="position:absolute;left:375px;top:155px;width:933px;height:879px;background:#EEF7FF;border-radius:50%;z-index:1;overflow:hidden;">
-              <svg width="933" height="879" viewBox="0 0 933 879" fill="none" style="position:absolute;inset:0;">
-                <path d="M0 0 Q466 220 933 0 L933 879 Q466 660 0 879 Z" fill="#D2DCEE"/>
-              </svg>
+            <!-- Top section: category label -->
+            <div style="position:absolute;left:617px;top:118px;width:449px;text-align:center;overflow:visible;">
+              <span class="col-sign-cat" style="font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);">קטגוריה</span>
+            </div>
+            <!-- Top section: left letter (ת - range end) -->
+            <div style="position:absolute;left:528px;top:204px;overflow:visible;">
+              <span class="col-sign-letter2" style="font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;direction:ltr;">ת</span>
+            </div>
+            <!-- Top section: bar between letters -->
+            <div style="position:absolute;left:772px;top:285px;width:139px;height:9px;background:#2956AA;"></div>
+            <!-- Top section: right letter (א - range start) -->
+            <div style="position:absolute;left:981px;top:204px;overflow:visible;">
+              <span class="col-sign-letter1" style="font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;direction:ltr;">א</span>
             </div>
 
-            <!-- Horizontal separator -->
-            <div style="position:absolute;left:25px;top:594.03px;width:1634px;height:2.44px;background:#2956AA;z-index:5;"></div>
-
-            <!-- Top content block -->
-            <div style="position:absolute;left:404.50px;top:109.20px;width:875.22px;height:266.02px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36.42px;z-index:5;">
-              <span class="col-sign-cat" style="font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;text-align:center;font-family:var(--font);">קטגוריה</span>
-              <div style="display:inline-flex;align-items:center;gap:63.63px;direction:ltr;">
-                <div style="position:relative;width:187.36px;height:171.10px;">
-                  <span class="col-sign-letter2" style="position:absolute;left:-9.26px;top:0;font-size:330.85px;font-weight:900;color:#2956AA;line-height:1;font-family:var(--font);">ת</span>
-                </div>
-                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;"></div>
-                <div style="position:relative;width:187.36px;height:171.10px;">
-                  <span class="col-sign-letter1" style="position:absolute;left:-5.02px;top:0;font-size:330.85px;font-weight:900;color:#2956AA;line-height:1;font-family:var(--font);">א</span>
-                </div>
-              </div>
+            <!-- Bottom section: category label (offset 560px from top) -->
+            <div style="position:absolute;left:617px;top:678px;width:449px;text-align:center;overflow:visible;">
+              <span class="col-sign-cat" style="font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);">קטגוריה</span>
             </div>
-
-            <!-- Top arrow -->
-            <div style="position:absolute;left:503.01px;top:411.65px;width:678.20px;height:109.01px;background:#2956AA;outline:2px solid #2956AA;display:flex;align-items:center;justify-content:center;z-index:5;">
-              <span style="color:#fff;font-weight:900;font-size:52px;letter-spacing:6px;font-family:var(--font);">&lt;&lt;&lt;</span>
+            <!-- Bottom section: left letter (ת - range end) -->
+            <div style="position:absolute;left:528px;top:764px;overflow:visible;">
+              <span class="col-sign-letter2" style="font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;direction:ltr;">ת</span>
             </div>
-
-            <!-- Bottom content block -->
-            <div style="position:absolute;left:404.50px;top:669.84px;width:875.22px;height:266.02px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36.42px;z-index:5;">
-              <span class="col-sign-cat" style="font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;text-align:center;font-family:var(--font);">קטגוריה</span>
-              <div style="display:inline-flex;align-items:center;gap:63.63px;direction:ltr;">
-                <div style="position:relative;width:187.36px;height:171.10px;">
-                  <span class="col-sign-letter2" style="position:absolute;left:-9.26px;top:0;font-size:330.85px;font-weight:900;color:#2956AA;line-height:1;font-family:var(--font);">ת</span>
-                </div>
-                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;"></div>
-                <div style="position:relative;width:187.36px;height:171.10px;">
-                  <span class="col-sign-letter1" style="position:absolute;left:-5.02px;top:0;font-size:330.85px;font-weight:900;color:#2956AA;line-height:1;font-family:var(--font);">א</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Bottom arrow (rotated 180° from top-left) -->
-            <div style="position:absolute;left:1181.21px;top:1081.30px;width:678.20px;height:109.01px;background:#2956AA;display:flex;align-items:center;justify-content:center;z-index:5;transform:rotate(180deg);transform-origin:top left;">
-              <span style="color:#fff;font-weight:900;font-size:52px;letter-spacing:6px;font-family:var(--font);">&gt;&gt;&gt;</span>
+            <!-- Bottom section: bar between letters -->
+            <div style="position:absolute;left:772px;top:846px;width:139px;height:9px;background:#2956AA;"></div>
+            <!-- Bottom section: right letter (א - range start) -->
+            <div style="position:absolute;left:981px;top:764px;overflow:visible;">
+              <span class="col-sign-letter1" style="font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;direction:ltr;">א</span>
             </div>
 
           </div>
