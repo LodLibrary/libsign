@@ -287,7 +287,10 @@ html, body {
     min-height: auto;
     box-shadow: none;
     padding: 0;
+    page-break-after: always;
   }
+
+  .a4-page:last-child { page-break-after: avoid; }
 
   .sign-card {
     break-inside: avoid;
@@ -549,6 +552,39 @@ function splitCSVLine(line) {
   return result;
 }
 
+// ===== PAGINATION =====
+// Measures actual rendered card positions to split into A4 pages
+async function paginateCards() {
+  const PAGE_H_MM = 277; // A4 297mm - 10mm top padding - 10mm bottom padding
+  const MM_PX = 96 / 25.4;
+  const pageHpx = PAGE_H_MM * MM_PX;
+
+  const temp = document.createElement('div');
+  Object.assign(temp.style, {
+    position: 'fixed', visibility: 'hidden', top: '0', left: '0',
+    width: '190mm', display: 'flex', flexWrap: 'wrap',
+    columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
+  });
+  temp.innerHTML = cards.map(buildCardHTML).join('');
+  document.body.appendChild(temp);
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  const els = [...temp.querySelectorAll('.sign-card')];
+  const pages = [[]];
+  els.forEach((el, i) => {
+    const pageIdx = pages.length - 1;
+    const relBottom = el.offsetTop + el.offsetHeight - pageIdx * pageHpx;
+    if (relBottom > pageHpx && pages[pageIdx].length > 0) {
+      pages.push([cards[i]]);
+    } else {
+      pages[pageIdx].push(cards[i]);
+    }
+  });
+
+  document.body.removeChild(temp);
+  return pages;
+}
+
 // ===== RENDER =====
 function scoreColor(hex) {
   // text color at ~30% opacity for score lines
@@ -600,7 +636,11 @@ function render() {
     return;
   }
 
-  pane.innerHTML = `<div class="a4-page">${cards.map(buildCardHTML).join('\n')}</div>`;
+  paginateCards().then(pages => {
+    pane.innerHTML = pages.map(pageCards =>
+      `<div class="a4-page">${pageCards.map(buildCardHTML).join('\n')}</div>`
+    ).join('\n');
+  });
 }
 
 // ===== CSV TEMPLATE =====
