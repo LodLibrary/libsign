@@ -176,7 +176,7 @@ html, body {
   .card-list-series { font-weight: 700; }
   .card-list-author { color: var(--muted); }
 
-  .btn-del {
+  .btn-edit, .btn-del {
     background: none;
     border: none;
     color: var(--muted);
@@ -187,7 +187,8 @@ html, body {
     border-radius: 4px;
     flex-shrink: 0;
   }
-  .btn-del:hover { color: var(--danger); background: #ffeaea; }
+  .btn-edit:hover { color: var(--accent); background: #e8edf8; }
+  .btn-del:hover  { color: var(--danger);  background: #ffeaea; }
 
   .empty-hint {
     text-align: center;
@@ -317,7 +318,7 @@ html, body {
 
     <!-- Add card form -->
     <div>
-      <div class="section-title">הוסף כרטיס</div>
+      <div class="section-title" id="form-title">הוסף כרטיס</div>
       <div class="form-group">
         <label for="inp-series">שם הסדרה / הספר</label>
         <input id="inp-series" type="text" placeholder="למשל: הארי פוטר" autocomplete="off"/>
@@ -337,7 +338,8 @@ html, body {
           <option value="אחר">אחר</option>
         </select>
       </div>
-      <button class="btn btn-primary" onclick="addCard()">+ הוסף כרטיס</button>
+      <button class="btn btn-primary" id="btn-submit" onclick="submitForm()">+ הוסף כרטיס</button>
+      <button class="btn btn-secondary" id="btn-cancel" style="display:none;margin-top:6px;" onclick="cancelEdit()">ביטול</button>
     </div>
 
     <hr class="divider"/>
@@ -398,6 +400,7 @@ const CATEGORY_LABELS = {
 const CARDS_PER_PAGE = 18;
 
 let cards = []; // { series, author, category }
+let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
 
 // ===== HELPERS =====
 function escHtml(s) {
@@ -420,23 +423,56 @@ function resolveCategory(raw) {
   return aliases[lower] || 'אחר';
 }
 
-// ===== ADD / REMOVE =====
-function addCard(series, author, category) {
-  if (series === undefined) {
-    series   = document.getElementById('inp-series').value.trim();
-    author   = document.getElementById('inp-author').value.trim();
-    category = document.getElementById('inp-cat').value;
-    if (!series) { document.getElementById('inp-series').focus(); return; }
+// ===== ADD / EDIT / REMOVE =====
+function submitForm() {
+  const series   = document.getElementById('inp-series').value.trim();
+  const author   = document.getElementById('inp-author').value.trim();
+  const category = resolveCategory(document.getElementById('inp-cat').value);
+  if (!series) { document.getElementById('inp-series').focus(); return; }
+
+  if (editingIdx >= 0) {
+    cards[editingIdx] = { series, author, category };
+    cancelEdit();
+  } else {
+    cards.push({ series, author, category });
     document.getElementById('inp-series').value = '';
     document.getElementById('inp-author').value = '';
     document.getElementById('inp-series').focus();
   }
-  category = resolveCategory(category);
+  render();
+}
+
+function addCard(series, author, category) {
+  // kept for CSV import path
+  category = resolveCategory(category || 'אחר');
   cards.push({ series, author, category });
   render();
 }
 
+function editCard(idx) {
+  const c = cards[idx];
+  editingIdx = idx;
+  document.getElementById('inp-series').value = c.series;
+  document.getElementById('inp-author').value  = c.author || '';
+  document.getElementById('inp-cat').value     = c.category;
+  document.getElementById('form-title').textContent  = 'ערוך כרטיס';
+  document.getElementById('btn-submit').textContent  = '✔ שמור שינויים';
+  document.getElementById('btn-cancel').style.display = '';
+  document.getElementById('inp-series').focus();
+  document.querySelector('.sidebar').scrollTop = 0;
+}
+
+function cancelEdit() {
+  editingIdx = -1;
+  document.getElementById('inp-series').value = '';
+  document.getElementById('inp-author').value  = '';
+  document.getElementById('form-title').textContent  = 'הוסף כרטיס';
+  document.getElementById('btn-submit').textContent  = '+ הוסף כרטיס';
+  document.getElementById('btn-cancel').style.display = 'none';
+}
+
 function removeCard(idx) {
+  if (editingIdx === idx) cancelEdit();
   cards.splice(idx, 1);
   render();
 }
@@ -542,6 +578,7 @@ function render() {
           <span class="card-list-series">${escHtml(c.series)}</span>
           ${c.author ? `<span class="card-list-author"> — ${escHtml(c.author)}</span>` : ''}
         </span>
+        <button class="btn-edit" title="ערוך" onclick="editCard(${i})">✎</button>
         <button class="btn-del" title="מחק" onclick="removeCard(${i})">✕</button>
       </div>`;
     }).join('');
