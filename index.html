@@ -66,9 +66,10 @@ html, body {
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
-    transition: background .15s;
+    transition: background .15s, transform .12s;
   }
-  .btn-print:hover { background: #e8edf8; }
+  .btn-print:hover  { background: #e8edf8; transform: translateY(-1px); }
+  .btn-print:active { transform: scale(0.95); }
 
   .layout {
     display: grid;
@@ -123,10 +124,11 @@ html, body {
     font-weight: 600;
     cursor: pointer;
     border: none;
-    transition: opacity .15s;
+    transition: opacity .15s, transform .12s;
   }
-  .btn:hover { opacity: .85; }
-  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn:hover  { opacity: .88; }
+  .btn:active { transform: scale(0.95); }
+  .btn-primary   { background: var(--accent); color: #fff; width: 100%; }
   .btn-secondary { background: #e8edf8; color: var(--accent); width: 100%; }
 
   .divider { border: none; border-top: 1px solid var(--border); }
@@ -157,7 +159,11 @@ html, body {
     border-radius: 6px;
     border: 1px solid var(--border);
     font-size: .85rem;
+    animation: slideInItem .2s ease both;
+    transition: background .15s, transform .15s, opacity .18s;
   }
+  .card-list-item:hover { background: var(--ui-bg); }
+  .card-list-item.removing { opacity: 0; transform: translateX(12px); }
 
   .card-list-dot {
     width: 12px;
@@ -186,9 +192,11 @@ html, body {
     padding: 2px 4px;
     border-radius: 4px;
     flex-shrink: 0;
+    transition: color .12s, background .12s, transform .1s;
   }
-  .btn-edit:hover { color: var(--accent); background: #e8edf8; }
-  .btn-del:hover  { color: var(--danger);  background: #ffeaea; }
+  .btn-edit:hover  { color: var(--accent); background: #e8edf8; }
+  .btn-del:hover   { color: var(--danger);  background: #ffeaea; }
+  .btn-edit:active, .btn-del:active { transform: scale(0.82); }
 
   .empty-hint {
     text-align: center;
@@ -196,6 +204,17 @@ html, body {
     font-size: .85rem;
     padding: 16px;
   }
+
+  /* ----- Animations ----- */
+  @keyframes slideInItem {
+    from { opacity: 0; transform: translateX(10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes fadeScaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .sign-card { animation: fadeScaleIn .25s ease both; }
 
   /* ----- Preview pane ----- */
   .preview-pane {
@@ -488,8 +507,15 @@ function cancelEdit() {
 
 function removeCard(idx) {
   if (editingIdx === idx) cancelEdit();
-  cards.splice(idx, 1);
-  render();
+  const items = document.querySelectorAll('.card-list-item');
+  const item = items[idx];
+  if (item) {
+    item.classList.add('removing');
+    setTimeout(() => { cards.splice(idx, 1); render(); }, 180);
+  } else {
+    cards.splice(idx, 1);
+    render();
+  }
 }
 
 function clearAll() {
