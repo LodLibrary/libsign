@@ -354,7 +354,7 @@ html, body {
     <!-- CSV import -->
     <div class="csv-area">
       <div class="section-title">ייבוא CSV</div>
-      <p class="csv-hint">עמודות: <code>series,author,category</code> (שורת כותרת נדרשת)</p>
+      <p class="csv-hint">עמודות: <code>series,author,category,direction</code> — direction: <code>rtl</code> או <code>ltr</code> (אופציונלי)</p>
       <button class="btn btn-secondary" onclick="downloadCSVTemplate()">⬇ הורד תבנית CSV</button>
       <input type="file" id="csv-file" accept=".csv,text/csv"/>
       <button class="btn btn-secondary" onclick="importCSV()">ייבא קובץ CSV</button>
@@ -521,7 +521,8 @@ function parseCSV(text) {
     const series   = (cols[0] || '').trim();
     const author   = (cols[1] || '').trim();
     const category = resolveCategory(cols[2] || 'אחר');
-    if (series) { cards.push({ series, author, category }); added++; }
+    const dir      = (cols[3] || '').trim().toLowerCase() === 'ltr' ? 'ltr' : 'rtl';
+    if (series) { cards.push({ series, author, category, dir }); added++; }
   }
   render();
   if (added) alert(`יובאו ${added} כרטיסים.`);
@@ -611,11 +612,11 @@ function render() {
 // ===== CSV TEMPLATE =====
 function downloadCSVTemplate() {
   const rows = [
-    'series,author,category',
-    'הארי פוטר,ג\'יי.קיי. רולינג,נוער',
-    'ארנב שרוצה לישון,קרל-יוהן פורסן ארלין,גיל רך',
-    'שם הסדרה,שם המחבר/ת,ילדים',
-    ',,מבוגרות/ים',
+    'series,author,category,direction',
+    'הארי פוטר,ג\'יי.קיי. רולינג,נוער,rtl',
+    'ארנב שרוצה לישון,קרל-יוהן פורסן ארלין,גיל רך,rtl',
+    'Harry Potter,J.K. Rowling,נוער,ltr',
+    'שם הסדרה,שם המחבר/ת,ילדים,rtl',
   ];
   const blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
