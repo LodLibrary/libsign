@@ -850,11 +850,11 @@ function buildCardHTML(card) {
   const sc  = scoreColor(colors.text);
   const dir = card.dir || 'rtl';
   return `<div class="sign-card" style="background:${colors.bg};color:${colors.text};--sc:${sc};direction:${dir};">
-  <div class="fold"></div>
-  <div class="text-zone">
-    <span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>
+  <div class="fold" style="background:${colors.bg}"></div>
+  <div class="text-zone" style="color:${colors.text}">
+    <span class="series-name" style="color:${colors.text}">${escHtml(card.series)}</span><span class="separator" style="color:${colors.text}"> | </span><span class="author-name" style="color:${colors.text}">${escHtml(card.author || '')}</span>
   </div>
-  <div class="fold"></div>
+  <div class="fold" style="background:${colors.bg}"></div>
 </div>`;
 }
 
@@ -924,6 +924,8 @@ async function savePDF() {
   btn.disabled = true;
 
   try {
+    await document.fonts.ready;
+    await new Promise(r => requestAnimationFrame(r));
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const A4_W = 210, A4_H = 297;
