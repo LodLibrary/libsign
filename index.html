@@ -395,6 +395,7 @@ html, body {
   font-size: 20pt;
   font-weight: 600;
   line-height: 1;
+  text-transform: uppercase;
 }
 
 /* Letter stack preview (screen only) */
@@ -493,8 +494,8 @@ html, body {
 <header class="app-header">
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-age"     onclick="switchTab('age')">כרטיסי גיל</button>
-    <button class="tab-btn"        id="tab-columns" onclick="switchTab('columns')">שלטי עמודות</button>
     <button class="tab-btn"        id="tab-letters" onclick="switchTab('letters')">אותיות מדף</button>
+    <button class="tab-btn"        id="tab-columns" onclick="switchTab('columns')">שלטי עמודות</button>
   </div>
   <div style="display:flex;gap:8px;">
     <button class="btn-print" onclick="handlePrint()">🖨 הדפס</button>
@@ -911,12 +912,12 @@ function renderLetterSVG(svgEl, letter) {
 }
 
 function updateColumnSign() {
-  const r1Top  = document.getElementById('col-range1-top').value.trim();
-  const r2Top  = document.getElementById('col-range2-top').value.trim();
-  const catTop = document.getElementById('col-cat-top').value.trim() || 'מחלקה';
-  const r1Bot  = document.getElementById('col-range1-bot').value.trim();
-  const r2Bot  = document.getElementById('col-range2-bot').value.trim();
-  const catBot = document.getElementById('col-cat-bot').value.trim() || 'מחלקה';
+  const r1Top  = document.getElementById('col-range1-top').value.trim().toUpperCase();
+  const r2Top  = document.getElementById('col-range2-top').value.trim().toUpperCase();
+  const catTop = (document.getElementById('col-cat-top').value.trim() || 'מחלקה').toUpperCase();
+  const r1Bot  = document.getElementById('col-range1-bot').value.trim().toUpperCase();
+  const r2Bot  = document.getElementById('col-range2-bot').value.trim().toUpperCase();
+  const catBot = (document.getElementById('col-cat-bot').value.trim() || 'מחלקה').toUpperCase();
   document.getElementById('col-cat-top-el').textContent = catTop;
   document.getElementById('col-cat-bot-el').textContent = catBot;
 
@@ -1247,7 +1248,7 @@ function render() {
 
 // ===== SHELF LETTERS =====
 function addLetterCards() {
-  const ch  = document.getElementById('inp-letter').value.trim();
+  const ch  = document.getElementById('inp-letter').value.trim().toUpperCase();
   const qty = parseInt(document.getElementById('inp-letter-qty').value) || 1;
   if (!ch) { alert('הכנס תו'); return; }
   letterCards.push({ char: ch, qty });
