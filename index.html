@@ -536,8 +536,8 @@ html, body {
 @media print {
 
   .app-header,
-  .sidebar,
-  .preview-pane > *:not(.a4-page) { display: none !important; }
+  .sidebar { display: none !important; }
+  .preview-pane > *:not(.a4-page):not(.col-preview-wrapper) { display: none !important; }
 
   html, body { background: white; height: auto; }
 
