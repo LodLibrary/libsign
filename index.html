@@ -937,6 +937,13 @@ async function savePDF() {
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
+        onclone: (_doc, el) => {
+          el.querySelectorAll('.sign-card').forEach(card => {
+            card.style.animation = 'none';
+            card.style.opacity   = '1';
+            card.style.transform = 'none';
+          });
+        },
       });
       if (i > 0) pdf.addPage();
       const imgData = canvas.toDataURL('image/png');
