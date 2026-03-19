@@ -480,22 +480,10 @@ html, body {
 
       <hr class="divider"/>
 
-      <!-- URL import from library catalog -->
-      <div class="csv-area">
-        <div class="section-title">ייבוא מקטלוג הספרייה</div>
-        <p class="csv-hint">הדבק קישור מ-lod.library.org.il</p>
-        <div class="url-import-row">
-          <input id="inp-url" type="url" dir="ltr" placeholder="https://lod.library.org.il/..."/>
-          <button id="btn-url-import" class="btn btn-secondary" onclick="importFromLibraryURL()">ייבא</button>
-        </div>
-      </div>
-
-      <hr class="divider"/>
-
       <!-- CSV import -->
       <div class="csv-area">
         <div class="section-title">ייבוא CSV</div>
-        <p class="csv-hint">עמודות: <code>series,author</code> (שורת כותרת נדרשת)</p>
+        <p class="csv-hint">עמודות: <code>series,author,tasa</code> (שורת כותרת נדרשת, טסה אופציונלית)</p>
         <button class="btn btn-secondary" onclick="downloadCSVTemplate()">⬇ הורד תבנית CSV</button>
         <input type="file" id="csv-file" accept=".csv,text/csv"/>
         <div class="form-group" style="margin-bottom:0;">
@@ -955,68 +943,6 @@ async function printColumnViaPDF() {
   }
 }
 
-// ===== LIBRARY URL IMPORT =====
-async function importFromLibraryURL() {
-  const input = document.getElementById('inp-url');
-  const btn   = document.getElementById('btn-url-import');
-  const url   = input.value.trim();
-  if (!url) return;
-
-  if (!url.includes('lod.library.org.il')) {
-    alert('כרגע נתמך רק קישור מ-lod.library.org.il');
-    return;
-  }
-
-  btn.disabled    = true;
-  btn.textContent = 'טוען…';
-
-  try {
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const response = await fetch(proxyUrl);
-    if (!response.ok) throw new Error('שגיאת רשת (' + response.status + ')');
-    const data = await response.json();
-    const doc  = new DOMParser().parseFromString(data.contents, 'text/html');
-
-    let series = '', author = '';
-
-    for (const strong of doc.querySelectorAll('strong')) {
-      const label = strong.textContent.trim();
-      const next  = strong.nextElementSibling;
-      if (label === 'סדרה' && next && next.tagName === 'A') {
-        series = next.textContent.trim();
-      }
-      if ((label === 'מחבר' || label === 'מחבר/ת') && next && next.tagName === 'A') {
-        author = next.textContent.trim();
-      }
-    }
-
-    // fallback: search within parent element
-    if (!series) {
-      const el = [...doc.querySelectorAll('strong')].find(s => s.textContent.trim() === 'סדרה');
-      if (el) {
-        const a = el.closest('td,li,div,p') && el.closest('td,li,div,p').querySelector('a');
-        if (a) series = a.textContent.trim();
-      }
-    }
-
-    if (!series) {
-      alert('לא נמצאה סדרה בדף. ייתכן שמדובר בספר שאינו חלק מסדרה.');
-      return;
-    }
-
-    const dir = /[\u0590-\u05FF]/.test(series) ? 'rtl' : 'ltr';
-    cards.push({ series, author, dir, tasa: '' });
-    render();
-    input.value = '';
-
-  } catch (e) {
-    alert('שגיאה בטעינת הדף: ' + (e.message || e));
-  } finally {
-    btn.disabled    = false;
-    btn.textContent = 'ייבא';
-  }
-}
-
 // ===== CSV IMPORT =====
 function importCSV() {
   const file = document.getElementById('csv-file').files[0];
@@ -1027,6 +953,31 @@ function importCSV() {
     parseCSV(e.target.result, dir);
   };
   reader.readAsText(file, 'utf-8');
+}
+
+const TASA_NAME_TO_COLOR = {
+  'חום':'#7B3F00','brown':'#7B3F00',
+  'ורוד':'#E91E8C','pink':'#E91E8C',
+  'סגול':'#7B2FBE','purple':'#7B2FBE',
+  'לבן':'#FFFFFF','white':'#FFFFFF',
+  'כחול':'#1565C0','blue':'#1565C0',
+  'כתום':'#E65100','orange':'#E65100',
+  'אדום':'#C62828','red':'#C62828',
+  'ירוק':'#2E7D32','green':'#2E7D32',
+  'צהוב':'#F9A825','yellow':'#F9A825',
+  'שחור':'#212121','black':'#212121',
+  'אפור':'#9E9E9E','gray':'#9E9E9E','grey':'#9E9E9E',
+};
+
+function parseTasaValue(raw) {
+  if (!raw) return '';
+  const v = raw.trim().toLowerCase();
+  if (!v) return '';
+  // Accept Hebrew/English color name
+  if (TASA_NAME_TO_COLOR[v]) return TASA_NAME_TO_COLOR[v];
+  // Accept hex color directly
+  if (/^#[0-9a-f]{6}$/i.test(raw.trim())) return raw.trim().toUpperCase();
+  return '';
 }
 
 function parseCSV(text, dir = 'rtl') {
@@ -1042,9 +993,10 @@ function parseCSV(text, dir = 'rtl') {
   for (let i = startIdx; i < lines.length; i++) {
     const cols = splitCSVLine(lines[i]);
     if (cols.length < 1) continue;
-    const series   = (cols[0] || '').trim();
-    const author   = (cols[1] || '').trim();
-    if (series) { cards.push({ series, author, dir }); added++; }
+    const series = (cols[0] || '').trim();
+    const author = (cols[1] || '').trim();
+    const tasa   = parseTasaValue(cols[2]);
+    if (series) { cards.push({ series, author, dir, tasa }); added++; }
   }
   render();
   if (added) alert(`יובאו ${added} כרטיסים.`);
@@ -1160,11 +1112,11 @@ function render() {
 // ===== CSV TEMPLATE =====
 function downloadCSVTemplate() {
   const rows = [
-    'series,author',
-    'הארי פוטר,ג\'יי.קיי. רולינג',
-    'ארנב שרוצה לישון,קרל-יוהן פורסן ארלין',
-    'שם הסדרה,שם המחבר/ת',
-    ',',
+    'series,author,tasa',
+    'הארי פוטר,ג\'יי.קיי. רולינג,סגול',
+    'ארנב שרוצה לישון,קרל-יוהן פורסן ארלין,',
+    'שם הסדרה,שם המחבר/ת,כחול',
+    ',,',
   ];
   const blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
