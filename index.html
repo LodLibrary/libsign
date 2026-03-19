@@ -366,7 +366,6 @@ html, body {
 
 /* ===== PRINT STYLES ===== */
 @media print {
-  @page { size: A4 portrait; margin: 10mm; }
 
   .app-header,
   .sidebar,
@@ -402,16 +401,17 @@ html, body {
   body[data-tab="age"]     #preview-columns { display: none !important; }
   body[data-tab="columns"] #preview-pane    { display: none !important; }
   body[data-tab="columns"] #preview-columns > * { display: block !important; }
-  body[data-tab="columns"] .col-preview-wrapper { padding: 0 !important; }
   body[data-tab="columns"] .col-preview-wrapper {
+    padding: 0 !important;
     overflow: visible !important;
+    height: auto !important;
+    display: block !important;
   }
   body[data-tab="columns"] .col-sign-scaler {
     transform: none !important;
   }
   body[data-tab="columns"] #column-sign {
-    transform: scale(0.644);
-    transform-origin: top left;
+    zoom: 0.5;
   }
 }
 </style>
@@ -913,15 +913,15 @@ function handlePDF() {
 }
 
 function handlePrint() {
+  const s = document.createElement('style');
   if (activeTab === 'columns') {
-    const s = document.createElement('style');
     s.textContent = '@page { size: A4 landscape; margin: 5mm; }';
-    document.head.appendChild(s);
-    window.print();
-    s.remove();
   } else {
-    window.print();
+    s.textContent = '@page { size: A4 portrait; margin: 10mm; }';
   }
+  document.head.appendChild(s);
+  window.print();
+  s.remove();
 }
 
 // ===== LIBRARY URL IMPORT =====
