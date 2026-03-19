@@ -401,6 +401,7 @@ html, body {
   /* ----- Tab-aware print visibility ----- */
   body[data-tab="age"]     #preview-columns { display: none !important; }
   body[data-tab="columns"] #preview-pane    { display: none !important; }
+  body[data-tab="columns"] #preview-columns > * { display: block !important; }
   body[data-tab="columns"] .col-preview-wrapper { padding: 0 !important; }
   body[data-tab="columns"] .col-sign-scaler {
     transform: scale(0.642) !important;
