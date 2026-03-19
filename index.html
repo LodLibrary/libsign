@@ -380,7 +380,7 @@ html, body {
   flex-direction: column;
   min-width: 60mm;
   max-width: 250mm;
-  height: 35mm;
+  min-height: 35mm;
   flex-shrink: 0;
   direction: rtl;
   print-color-adjust: exact;
@@ -396,14 +396,13 @@ html, body {
 }
 
 .sign-card .text-zone {
-  height: 20mm;
+  min-height: 20mm;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 5mm;
+  padding: 2.5mm 5mm;
   white-space: nowrap;
-  overflow: hidden;
   border-top: 0.5px dashed #799DDE;
   border-bottom: 0.5px dashed #799DDE;
   font-size: 20pt;
@@ -486,13 +485,13 @@ html, body {
   flex-shrink: 0;
 }
 .letter-card .text-zone {
-  height: 20mm;
+  min-height: 20mm;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 2.5mm;
   white-space: nowrap;
-  overflow: hidden;
   border-top: 0.5px dashed #799DDE;
   border-bottom: 0.5px dashed #799DDE;
   font-size: 20pt;
