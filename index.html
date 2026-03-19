@@ -403,10 +403,15 @@ html, body {
   body[data-tab="columns"] #preview-pane    { display: none !important; }
   body[data-tab="columns"] #preview-columns > * { display: block !important; }
   body[data-tab="columns"] .col-preview-wrapper { padding: 0 !important; }
+  body[data-tab="columns"] .col-preview-wrapper {
+    overflow: visible !important;
+  }
   body[data-tab="columns"] .col-sign-scaler {
-    transform: scale(0.642) !important;
-    transform-origin: top left !important;
-    margin-bottom: -426px !important;
+    transform: none !important;
+  }
+  body[data-tab="columns"] #column-sign {
+    transform: scale(0.644);
+    transform-origin: top left;
   }
 }
 </style>
