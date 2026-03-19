@@ -587,13 +587,9 @@ html, body {
             <div style="position:absolute;left:0;top:109.20px;width:1684px;display:flex;flex-direction:column;align-items:center;gap:36.42px;">
               <span id="col-cat-top-el" style="width:875.22px;text-align:center;font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);white-space:nowrap;overflow:hidden;">מחלקה</span>
               <div style="display:flex;width:641.07px;align-items:flex-start;gap:63.63px;direction:ltr;">
-                <div style="width:187px;height:231px;flex-shrink:0;position:relative;overflow:visible;">
-                  <span id="col-l2-top" style="position:absolute;left:50%;transform:translateX(-50%);top:-120px;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">ת</span>
-                </div>
-                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;margin-top:25px;"></div>
-                <div style="width:187px;height:231px;flex-shrink:0;position:relative;overflow:visible;">
-                  <span id="col-l1-top" style="position:absolute;left:50%;transform:translateX(-50%);top:-120px;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">א</span>
-                </div>
+                <svg id="col-l2-top" width="187" height="231" viewBox="0 0 187 231" xmlns="http://www.w3.org/2000/svg"></svg>
+                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;margin-top:111px;"></div>
+                <svg id="col-l1-top" width="187" height="231" viewBox="0 0 187 231" xmlns="http://www.w3.org/2000/svg"></svg>
               </div>
             </div>
 
@@ -601,13 +597,9 @@ html, body {
             <div style="position:absolute;left:0;top:669.84px;width:1684px;display:flex;flex-direction:column;align-items:center;gap:36.42px;">
               <span id="col-cat-bot-el" style="width:875.22px;text-align:center;font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);white-space:nowrap;overflow:hidden;">מחלקה</span>
               <div style="display:flex;width:641.07px;align-items:flex-start;gap:63.63px;direction:ltr;">
-                <div style="width:187px;height:231px;flex-shrink:0;position:relative;overflow:visible;">
-                  <span id="col-l2-bot" style="position:absolute;left:50%;transform:translateX(-50%);top:-120px;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">ת</span>
-                </div>
-                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;margin-top:25px;"></div>
-                <div style="width:187px;height:231px;flex-shrink:0;position:relative;overflow:visible;">
-                  <span id="col-l1-bot" style="position:absolute;left:50%;transform:translateX(-50%);top:-120px;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">א</span>
-                </div>
+                <svg id="col-l2-bot" width="187" height="231" viewBox="0 0 187 231" xmlns="http://www.w3.org/2000/svg"></svg>
+                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;margin-top:111px;"></div>
+                <svg id="col-l1-bot" width="187" height="231" viewBox="0 0 187 231" xmlns="http://www.w3.org/2000/svg"></svg>
               </div>
             </div>
 
@@ -726,6 +718,76 @@ function switchTab(tab) {
   if (tab === 'columns') requestAnimationFrame(updateColumnSignScale);
 }
 
+// Render a single Hebrew letter into an SVG element as a pure vector path.
+// Uses an off-screen canvas to extract the glyph outline, then fits it
+// precisely into the SVG viewBox so every letter's top edge aligns uniformly.
+const _glyphCache = {};
+function renderLetterSVG(svgEl, letter) {
+  const W = 187, H = 231;
+  const font = '900 300px Assistant, Arial, sans-serif';
+  const color = '#2956AA';
+
+  // Use canvas to measure the actual glyph bounding box
+  const canvas = document.createElement('canvas');
+  canvas.width = 400; canvas.height = 500;
+  const ctx = canvas.getContext('2d');
+  ctx.font = font;
+  ctx.textBaseline = 'alphabetic';
+
+  // Measure exact pixel bounds by drawing and scanning
+  const cacheKey = letter;
+  let bounds = _glyphCache[cacheKey];
+  if (!bounds) {
+    ctx.clearRect(0, 0, 400, 500);
+    ctx.fillStyle = '#000';
+    ctx.fillText(letter, 50, 350);
+    const imgData = ctx.getImageData(0, 0, 400, 500);
+    const d = imgData.data;
+    let minY = 500, maxY = 0, minX = 400, maxX = 0;
+    for (let y = 0; y < 500; y++) {
+      for (let x = 0; x < 400; x++) {
+        if (d[(y * 400 + x) * 4 + 3] > 20) {
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+        }
+      }
+    }
+    bounds = { minX, minY, maxX, maxY, drawX: 50, drawY: 350 };
+    _glyphCache[cacheKey] = bounds;
+  }
+
+  const gw = bounds.maxX - bounds.minX + 1;
+  const gh = bounds.maxY - bounds.minY + 1;
+
+  // Scale glyph to fit inside the SVG box with some padding
+  const pad = 8;
+  const availW = W - pad * 2, availH = H - pad * 2;
+  const scale = Math.min(availW / gw, availH / gh);
+  const sw = gw * scale, sh = gh * scale;
+  const ox = (W - sw) / 2, oy = (H - sh) / 2;
+
+  // Draw the glyph onto a larger canvas at the needed scale for path extraction
+  const bigCanvas = document.createElement('canvas');
+  const bigScale = scale;
+  bigCanvas.width = W; bigCanvas.height = H;
+  const bctx = bigCanvas.getContext('2d');
+  bctx.font = font;
+  bctx.textBaseline = 'alphabetic';
+  bctx.fillStyle = color;
+  // Position: we need drawX/drawY relative to minX/minY mapped to our target
+  const tx = ox - (bounds.minX - bounds.drawX) * bigScale;
+  const ty = oy - (bounds.minY - bounds.drawY) * bigScale;
+  bctx.setTransform(bigScale, 0, 0, bigScale, tx, ty);
+  bctx.fillText(letter, 0, 0);
+
+  // Convert canvas to an image inside the SVG
+  const dataURL = bigCanvas.toDataURL('image/png');
+  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svgEl.innerHTML = `<image href="${dataURL}" width="${W}" height="${H}" />`;
+}
+
 function updateColumnSign() {
   const r1Top  = document.getElementById('col-range1-top').value.trim();
   const r2Top  = document.getElementById('col-range2-top').value.trim();
@@ -734,22 +796,17 @@ function updateColumnSign() {
   const r2Bot  = document.getElementById('col-range2-bot').value.trim();
   const catBot = document.getElementById('col-cat-bot').value.trim() || 'מחלקה';
   document.getElementById('col-cat-top-el').textContent = catTop;
+  document.getElementById('col-cat-bot-el').textContent = catBot;
+
   const l1TopChar = r1Top.charAt(0) || 'א';
   const l2TopChar = r2Top.charAt(0) || 'ת';
   const l1BotChar = r1Bot.charAt(0) || 'א';
   const l2BotChar = r2Bot.charAt(0) || 'ת';
-  document.getElementById('col-l1-top').textContent     = l1TopChar;
-  document.getElementById('col-l2-top').textContent     = l2TopChar;
-  document.getElementById('col-cat-bot-el').textContent = catBot;
-  document.getElementById('col-l1-bot').textContent     = l1BotChar;
-  document.getElementById('col-l2-bot').textContent     = l2BotChar;
-  // ל has an ascender – shift it further up so its visual top aligns with other letters
-  const lamedOffset = '-155px';
-  const normalOffset = '-120px';
-  document.getElementById('col-l1-top').style.top = l1TopChar === 'ל' ? lamedOffset : normalOffset;
-  document.getElementById('col-l2-top').style.top = l2TopChar === 'ל' ? lamedOffset : normalOffset;
-  document.getElementById('col-l1-bot').style.top = l1BotChar === 'ל' ? lamedOffset : normalOffset;
-  document.getElementById('col-l2-bot').style.top = l2BotChar === 'ל' ? lamedOffset : normalOffset;
+
+  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar);
+  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar);
+  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar);
+  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar);
 }
 
 function updateColumnSignScale() {
