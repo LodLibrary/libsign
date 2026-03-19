@@ -284,6 +284,9 @@ html, body {
   direction: rtl;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
+  background: #ffffff;
+  color: #2956AA;
+  border: 0.5px dashed #799DDE;
 }
 
 .sign-card .fold {
@@ -300,8 +303,8 @@ html, body {
   padding: 0 5mm;
   white-space: nowrap;
   overflow: hidden;
-  border-top: 0.4pt dashed var(--sc, rgba(0,0,0,0.25));
-  border-bottom: 0.4pt dashed var(--sc, rgba(0,0,0,0.25));
+  border-top: 0.5px dashed #799DDE;
+  border-bottom: 0.5px dashed #799DDE;
   font-size: 20pt;
   line-height: 1;
 }
@@ -392,17 +395,6 @@ html, body {
           <input id="inp-author" type="text" placeholder="למשל: ג'יי.קיי. רולינג" autocomplete="off"/>
         </div>
         <div class="form-group">
-          <label for="inp-cat">קטגוריית גיל</label>
-          <select id="inp-cat">
-            <option value="גיל רך">גיל רך (0–6)</option>
-            <option value="ילדים">ילדים (7–12)</option>
-            <option value="נוער">נוער (13–18)</option>
-            <option value="מבוגרות/ים">מבוגרות/ים (18+)</option>
-            <option value="מיוחדים">מיוחדים</option>
-            <option value="אחר">אחר</option>
-          </select>
-        </div>
-        <div class="form-group">
           <label for="inp-dir">כיוון טקסט</label>
           <select id="inp-dir">
             <option value="rtl">עברית ← (ימין לשמאל)</option>
@@ -418,7 +410,7 @@ html, body {
       <!-- CSV import -->
       <div class="csv-area">
         <div class="section-title">ייבוא CSV</div>
-        <p class="csv-hint">עמודות: <code>series,author,category</code> (שורת כותרת נדרשת)</p>
+        <p class="csv-hint">עמודות: <code>series,author</code> (שורת כותרת נדרשת)</p>
         <button class="btn btn-secondary" onclick="downloadCSVTemplate()">⬇ הורד תבנית CSV</button>
         <input type="file" id="csv-file" accept=".csv,text/csv"/>
         <div class="form-group" style="margin-bottom:0;">
@@ -551,26 +543,7 @@ html, body {
 </div>
 
 <script>
-// ===== COLOR MAP =====
-const COLORS = {
-  'אחר':         { bg: '#2956AA', text: '#FFFFFF' },
-  'מיוחדים':     { bg: '#2956AA', text: '#FFFFFF' },
-  'גיל רך':      { bg: '#FFC980', text: '#603700' },
-  'ילדים':       { bg: '#FFE9BD', text: '#6E4A00' },
-  'נוער':        { bg: '#77DFD5', text: '#13534D' },
-  'מבוגרות/ים':  { bg: '#F7F7F9', text: '#262A33' },
-};
-
-const CATEGORY_LABELS = {
-  'אחר':        'אחר',
-  'מיוחדים':    'מיוחדים',
-  'גיל רך':     'גיל רך (0–6)',
-  'ילדים':      'ילדים (7–12)',
-  'נוער':       'נוער (13–18)',
-  'מבוגרות/ים': 'מבוגרות/ים (18+)',
-};
-
-let cards = []; // { series, author, category }
+let cards = []; // { series, author, dir }
 let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
 let activeTab = 'age'; // 'age' | 'columns'
 
@@ -579,35 +552,19 @@ function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function resolveCategory(raw) {
-  const key = (raw || '').trim();
-  // Try exact match, then lowercase, then fallback
-  if (COLORS[key]) return key;
-  const lower = key.toLowerCase();
-  const aliases = {
-    'other': 'אחר', 'special': 'מיוחדים',
-    '0-6': 'גיל רך', 'גיל-רך': 'גיל רך', 'baby': 'גיל רך',
-    '7-12': 'ילדים', 'children': 'ילדים', 'kids': 'ילדים',
-    '13-18': 'נוער', 'teen': 'נוער', 'teens': 'נוער', 'youth': 'נוער',
-    '18+': 'מבוגרות/ים', 'adults': 'מבוגרות/ים', 'adult': 'מבוגרות/ים',
-    'מבוגרים': 'מבוגרות/ים',
-  };
-  return aliases[lower] || 'אחר';
-}
 
 // ===== ADD / EDIT / REMOVE =====
 function submitForm() {
-  const series   = document.getElementById('inp-series').value.trim();
-  const author   = document.getElementById('inp-author').value.trim();
-  const category = resolveCategory(document.getElementById('inp-cat').value);
-  const dir      = document.getElementById('inp-dir').value;
+  const series = document.getElementById('inp-series').value.trim();
+  const author = document.getElementById('inp-author').value.trim();
+  const dir    = document.getElementById('inp-dir').value;
   if (!series) { document.getElementById('inp-series').focus(); return; }
 
   if (editingIdx >= 0) {
-    cards[editingIdx] = { series, author, category, dir };
+    cards[editingIdx] = { series, author, dir };
     cancelEdit();
   } else {
-    cards.push({ series, author, category, dir });
+    cards.push({ series, author, dir });
     document.getElementById('inp-series').value = '';
     document.getElementById('inp-author').value = '';
     document.getElementById('inp-series').focus();
@@ -615,10 +572,9 @@ function submitForm() {
   render();
 }
 
-function addCard(series, author, category, dir) {
-  // kept for CSV import path
-  category = resolveCategory(category || 'אחר');
-  cards.push({ series, author, category, dir: dir || 'rtl' });
+function addCard(series, author, _category, dir) {
+  // kept for CSV import path (_category ignored)
+  cards.push({ series, author, dir: dir || 'rtl' });
   render();
 }
 
@@ -627,7 +583,6 @@ function editCard(idx) {
   editingIdx = idx;
   document.getElementById('inp-series').value = c.series;
   document.getElementById('inp-author').value  = c.author || '';
-  document.getElementById('inp-cat').value     = c.category;
   document.getElementById('inp-dir').value     = c.dir || 'rtl';
   document.getElementById('form-title').textContent  = 'ערוך כרטיס';
   document.getElementById('btn-submit').textContent  = '✔ שמור שינויים';
@@ -780,8 +735,7 @@ function parseCSV(text, dir = 'rtl') {
     if (cols.length < 1) continue;
     const series   = (cols[0] || '').trim();
     const author   = (cols[1] || '').trim();
-    const category = resolveCategory(cols[2] || 'אחר');
-    if (series) { cards.push({ series, author, category, dir }); added++; }
+    if (series) { cards.push({ series, author, dir }); added++; }
   }
   render();
   if (added) alert(`יובאו ${added} כרטיסים.`);
@@ -840,21 +794,14 @@ async function paginateCards() {
 }
 
 // ===== RENDER =====
-function scoreColor(hex) {
-  // text color at ~30% opacity for score lines
-  return hex + '4D';
-}
-
 function buildCardHTML(card) {
-  const colors = COLORS[card.category] || COLORS['אחר'];
-  const sc  = scoreColor(colors.text);
   const dir = card.dir || 'rtl';
-  return `<div class="sign-card" style="background:${colors.bg};color:${colors.text};--sc:${sc};direction:${dir};">
-  <div class="fold" style="background:${colors.bg}"></div>
-  <div class="text-zone" style="color:${colors.text}">
-    <span class="series-name" style="color:${colors.text}">${escHtml(card.series)}</span><span class="separator" style="color:${colors.text}"> | </span><span class="author-name" style="color:${colors.text}">${escHtml(card.author || '')}</span>
+  return `<div class="sign-card" style="direction:${dir};">
+  <div class="fold"></div>
+  <div class="text-zone">
+    <span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>
   </div>
-  <div class="fold" style="background:${colors.bg}"></div>
+  <div class="fold"></div>
 </div>`;
 }
 
@@ -869,9 +816,8 @@ function render() {
     list.innerHTML = '<div class="empty-hint">עדיין אין כרטיסים.<br/>הוסף למעלה או ייבא CSV.</div>';
   } else {
     list.innerHTML = cards.map((c, i) => {
-      const col = (COLORS[c.category] || COLORS['אחר']).bg;
       return `<div class="card-list-item">
-        <span class="card-list-dot" style="background:${col}"></span>
+        <span class="card-list-dot" style="background:#2956AA"></span>
         <span class="card-list-text">
           <span class="card-list-series">${escHtml(c.series)}</span>
           ${c.author ? `<span class="card-list-author"> — ${escHtml(c.author)}</span>` : ''}
@@ -900,11 +846,11 @@ function render() {
 // ===== CSV TEMPLATE =====
 function downloadCSVTemplate() {
   const rows = [
-    'series,author,category',
-    'הארי פוטר,ג\'יי.קיי. רולינג,נוער',
-    'ארנב שרוצה לישון,קרל-יוהן פורסן ארלין,גיל רך',
-    'שם הסדרה,שם המחבר/ת,ילדים',
-    ',,מבוגרות/ים',
+    'series,author',
+    'הארי פוטר,ג\'יי.קיי. רולינג',
+    'ארנב שרוצה לישון,קרל-יוהן פורסן ארלין',
+    'שם הסדרה,שם המחבר/ת',
+    ',',
   ];
   const blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
