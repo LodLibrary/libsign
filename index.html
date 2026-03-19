@@ -836,26 +836,22 @@ function updateColumnSign() {
     arrowR.style.display = '';   arrowR.style.transform = '';
     arrowL.style.display = '';   arrowL.style.transform = '';
     divider.style.display = '';
-    blockTop.style.display = ''; blockTop.style.top = '67px';
-    blockBot.style.display = ''; blockBot.style.top = '627px';
+    blockTop.style.display = 'flex'; blockTop.style.top = '67px';
+    blockBot.style.display = 'flex'; blockBot.style.top = '627px';
   } else if (arrows === 'right') {
-    // Show top section + right arrow, hide bottom + divider
     arrowR.style.display = '';
     arrowL.style.display = 'none';
     divider.style.display = 'none';
     blockBot.style.display = 'none';
-    blockTop.style.display = '';
-    // Center: shift down by 595 - 306 = 289px
+    blockTop.style.display = 'flex';
     blockTop.style.top = (67 + 289) + 'px';
     arrowR.style.transform = 'translate(0, 289)';
   } else if (arrows === 'left') {
-    // Show bottom section + left arrow, hide top + divider
     arrowR.style.display = 'none';
     arrowL.style.display = '';
     divider.style.display = 'none';
     blockTop.style.display = 'none';
-    blockBot.style.display = '';
-    // Center: shift up by 866 - 595 = 271px
+    blockBot.style.display = 'flex';
     blockBot.style.top = (627 - 271) + 'px';
     arrowL.style.transform = 'translate(0, -271)';
   }
