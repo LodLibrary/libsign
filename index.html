@@ -587,7 +587,7 @@ html, body {
               <!-- Top right-pointing arrow -->
               <path id="arrow-right" d="M1127.29 434.917L1181.92 489.55L1182.63 490.26L1181.92 490.968L1127.03 545.343L1126.31 546.053L1125.6 545.328L1117.36 536.824L1116.67 536.11L1117.37 535.414L1156.6 496.927H502.01V483.588H1156.63L1117.63 444.838L1116.93 444.141L1117.61 443.431L1125.86 434.927L1126.57 434.199L1127.29 434.917Z" fill="#2956AA" stroke="#2956AA" stroke-width="2"/>
               <!-- Horizontal divider -->
-              <path d="M1659 594.031H25V596.466H1659V594.031Z" fill="#2956AA"/>
+              <path id="col-divider" d="M1659 594.031H25V596.466H1659V594.031Z" fill="#2956AA"/>
               <!-- Bottom left-pointing arrow -->
               <path id="arrow-left" d="M556.936 995.559L502.303 1050.19L501.594 1050.9L502.306 1051.61L557.198 1105.98L557.916 1106.7L558.619 1105.97L566.866 1097.47L567.557 1096.75L566.848 1096.06L527.621 1057.57H1182.21V1044.23H527.597L566.595 1005.48L567.296 1004.78L566.608 1004.07L558.361 995.569L557.655 994.841L556.936 995.559Z" fill="#2956AA" stroke="#2956AA" stroke-width="2"/>
               <!-- Border -->
@@ -595,7 +595,7 @@ html, body {
             </svg>
 
             <!-- Top dynamic content block (full-width so align-items:center truly centers) -->
-            <div style="position:absolute;left:0;top:67px;width:1684px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+            <div id="col-block-top" style="position:absolute;left:0;top:67px;width:1684px;display:flex;flex-direction:column;align-items:center;gap:10px;">
               <span id="col-cat-top-el" style="width:1580px;text-align:center;font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);white-space:nowrap;overflow:hidden;">מחלקה</span>
               <div style="display:flex;width:641.07px;align-items:flex-start;gap:63.63px;direction:ltr;">
                 <svg id="col-l2-top" width="187" height="231" viewBox="0 0 187 231" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -605,7 +605,7 @@ html, body {
             </div>
 
             <!-- Bottom dynamic content block -->
-            <div style="position:absolute;left:0;top:627px;width:1684px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+            <div id="col-block-bot" style="position:absolute;left:0;top:627px;width:1684px;display:flex;flex-direction:column;align-items:center;gap:10px;">
               <span id="col-cat-bot-el" style="width:1580px;text-align:center;font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);white-space:nowrap;overflow:hidden;">מחלקה</span>
               <div style="display:flex;width:641.07px;align-items:flex-start;gap:63.63px;direction:ltr;">
                 <svg id="col-l2-bot" width="187" height="231" viewBox="0 0 187 231" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -819,10 +819,46 @@ function updateColumnSign() {
   renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar);
   renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar);
 
-  // Arrow visibility
+  // Arrow & section visibility
   const arrows = document.getElementById('col-arrows').value;
-  document.getElementById('arrow-right').style.display = (arrows === 'left') ? 'none' : '';
-  document.getElementById('arrow-left').style.display  = (arrows === 'right') ? 'none' : '';
+  const arrowR   = document.getElementById('arrow-right');
+  const arrowL   = document.getElementById('arrow-left');
+  const divider  = document.getElementById('col-divider');
+  const blockTop = document.getElementById('col-block-top');
+  const blockBot = document.getElementById('col-block-bot');
+
+  // Content block height ≈ 338px (category 97 + gap 10 + letters 231)
+  // Top section: content 67–405, arrow 435–545  → span 67–545, center 306
+  // Bottom section: content 627–965, arrow 996–1106 → span 627–1106, center 866
+  // Sign center = 595. When single section, shift so its center = 595.
+
+  if (arrows === 'both') {
+    arrowR.style.display = '';   arrowR.style.transform = '';
+    arrowL.style.display = '';   arrowL.style.transform = '';
+    divider.style.display = '';
+    blockTop.style.display = ''; blockTop.style.top = '67px';
+    blockBot.style.display = ''; blockBot.style.top = '627px';
+  } else if (arrows === 'right') {
+    // Show top section + right arrow, hide bottom + divider
+    arrowR.style.display = '';
+    arrowL.style.display = 'none';
+    divider.style.display = 'none';
+    blockBot.style.display = 'none';
+    blockTop.style.display = '';
+    // Center: shift down by 595 - 306 = 289px
+    blockTop.style.top = (67 + 289) + 'px';
+    arrowR.style.transform = 'translate(0, 289)';
+  } else if (arrows === 'left') {
+    // Show bottom section + left arrow, hide top + divider
+    arrowR.style.display = 'none';
+    arrowL.style.display = '';
+    divider.style.display = 'none';
+    blockTop.style.display = 'none';
+    blockBot.style.display = '';
+    // Center: shift up by 866 - 595 = 271px
+    blockBot.style.top = (627 - 271) + 'px';
+    arrowL.style.transform = 'translate(0, -271)';
+  }
 }
 
 function updateColumnSignScale() {
