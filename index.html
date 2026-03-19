@@ -914,10 +914,10 @@ function renderLetterSVG(svgEl, letter) {
 function updateColumnSign() {
   const r1Top  = document.getElementById('col-range1-top').value.trim().toUpperCase();
   const r2Top  = document.getElementById('col-range2-top').value.trim().toUpperCase();
-  const catTop = (document.getElementById('col-cat-top').value.trim() || 'מחלקה').toUpperCase();
+  const catTop = document.getElementById('col-cat-top').value.trim() || 'מחלקה';
   const r1Bot  = document.getElementById('col-range1-bot').value.trim().toUpperCase();
   const r2Bot  = document.getElementById('col-range2-bot').value.trim().toUpperCase();
-  const catBot = (document.getElementById('col-cat-bot').value.trim() || 'מחלקה').toUpperCase();
+  const catBot = document.getElementById('col-cat-bot').value.trim() || 'מחלקה';
   document.getElementById('col-cat-top-el').textContent = catTop;
   document.getElementById('col-cat-bot-el').textContent = catBot;
 
