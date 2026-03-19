@@ -912,16 +912,47 @@ function handlePDF() {
   else saveColumnPDF();
 }
 
-function handlePrint() {
-  const s = document.createElement('style');
+async function handlePrint() {
   if (activeTab === 'columns') {
-    s.textContent = '@page { size: A4 landscape; margin: 5mm; }';
+    await printColumnViaPDF();
   } else {
+    const s = document.createElement('style');
     s.textContent = '@page { size: A4 portrait; margin: 10mm; }';
+    document.head.appendChild(s);
+    window.print();
+    s.remove();
   }
-  document.head.appendChild(s);
-  window.print();
-  s.remove();
+}
+
+async function printColumnViaPDF() {
+  const sign = document.getElementById('column-sign');
+  const scaler = document.querySelector('.col-sign-scaler');
+  const prev = scaler.style.transform;
+  scaler.style.transform = 'none';
+  await document.fonts.ready;
+  await new Promise(r => requestAnimationFrame(r));
+  const canvas = await html2canvas(sign, {
+    scale: 2, useCORS: true, allowTaint: true,
+    backgroundColor: '#ffffff', logging: false,
+    width: 1684, height: 1190,
+  });
+  scaler.style.transform = prev;
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const W = 297, H = 210;
+  const imgData = canvas.toDataURL('image/png');
+  const imgH = (canvas.height / canvas.width) * W;
+  pdf.addImage(imgData, 'PNG', 0, Math.max(0, (H - imgH) / 2), W, Math.min(imgH, H));
+  const blob = pdf.output('blob');
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url);
+  if (win) {
+    win.addEventListener('afterprint', () => { win.close(); URL.revokeObjectURL(url); });
+    win.onload = () => win.print();
+  } else {
+    // fallback: if popup blocked, download instead
+    pdf.save('שלט-עמודות.pdf');
+  }
 }
 
 // ===== LIBRARY URL IMPORT =====
