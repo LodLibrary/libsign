@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,9 +66,10 @@ html, body {
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
-    transition: background .15s;
+    transition: background .15s, transform .12s;
   }
-  .btn-print:hover { background: #e8edf8; }
+  .btn-print:hover  { background: #e8edf8; transform: translateY(-1px); }
+  .btn-print:active { transform: scale(0.95); }
 
   .layout {
     display: grid;
@@ -121,13 +124,18 @@ html, body {
     font-weight: 600;
     cursor: pointer;
     border: none;
-    transition: opacity .15s;
+    transition: opacity .15s, transform .12s;
   }
-  .btn:hover { opacity: .85; }
-  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn:hover  { opacity: .88; }
+  .btn:active { transform: scale(0.95); }
+  .btn-primary   { background: var(--accent); color: #fff; width: 100%; }
   .btn-secondary { background: #e8edf8; color: var(--accent); width: 100%; }
 
   .divider { border: none; border-top: 1px solid var(--border); }
+
+  /* URL import */
+  .url-import-row { display: flex; gap: 6px; }
+  .url-import-row input { flex: 1; min-width: 0; }
 
   /* CSV upload */
   .csv-area {
@@ -155,7 +163,11 @@ html, body {
     border-radius: 6px;
     border: 1px solid var(--border);
     font-size: .85rem;
+    animation: slideInItem .2s ease both;
+    transition: background .15s, transform .15s, opacity .18s;
   }
+  .card-list-item:hover { background: var(--ui-bg); }
+  .card-list-item.removing { opacity: 0; transform: translateX(12px); }
 
   .card-list-dot {
     width: 12px;
@@ -174,7 +186,7 @@ html, body {
   .card-list-series { font-weight: 700; }
   .card-list-author { color: var(--muted); }
 
-  .btn-del {
+  .btn-edit, .btn-del {
     background: none;
     border: none;
     color: var(--muted);
@@ -184,8 +196,11 @@ html, body {
     padding: 2px 4px;
     border-radius: 4px;
     flex-shrink: 0;
+    transition: color .12s, background .12s, transform .1s;
   }
-  .btn-del:hover { color: var(--danger); background: #ffeaea; }
+  .btn-edit:hover  { color: var(--accent); background: #e8edf8; }
+  .btn-del:hover   { color: var(--danger);  background: #ffeaea; }
+  .btn-edit:active, .btn-del:active { transform: scale(0.82); }
 
   .empty-hint {
     text-align: center;
@@ -193,6 +208,17 @@ html, body {
     font-size: .85rem;
     padding: 16px;
   }
+
+  /* ----- Animations ----- */
+  @keyframes slideInItem {
+    from { opacity: 0; transform: translateX(10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes fadeScaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .sign-card { animation: fadeScaleIn .25s ease both; }
 
   /* ----- Preview pane ----- */
   .preview-pane {
@@ -211,43 +237,132 @@ html, body {
     background: #fff;
     padding: 10mm;
     box-shadow: 0 4px 24px rgba(0,0,0,.3);
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 60mm;
-    gap: 5mm;
-    align-content: start;
   }
+
+  /* ----- Tab bar ----- */
+  .tab-bar { display: flex; gap: 4px; }
+  .tab-btn {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: none;
+    border-radius: 6px 6px 0 0;
+    padding: 6px 16px;
+    font-family: var(--font);
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .tab-btn.active { background: rgba(255,255,255,0.30); }
+  .tab-btn:hover  { background: rgba(255,255,255,0.22); }
+
+  /* ----- Column sign preview ----- */
+  .col-preview-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 24px;
+    overflow: auto;
+    height: 100%;
+  }
+  .col-sign-scaler { transform-origin: top left; flex-shrink: 0; }
+}
+
+/* ===== A4 PAGE LAYOUT (screen + print) ===== */
+.a4-page {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: start;
+  column-gap: 4mm;
+  row-gap: 6mm;
 }
 
 /* ===== SHARED CARD STYLES (screen + print) ===== */
 .sign-card {
-  border-radius: 6px;
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
+  min-width: 60mm;
+  max-width: 250mm;
+  height: 35mm;
+  flex-shrink: 0;
+  direction: rtl;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+  background: #ffffff;
+  color: #2956AA;
+  border: 0.5px dashed #799DDE;
+}
+
+.sign-card .fold {
+  height: 7.5mm;
+  flex-shrink: 0;
+}
+
+.sign-card .text-zone {
+  height: 20mm;
+  flex-shrink: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6mm 8mm;
-  text-align: center;
+  padding: 0 5mm;
+  white-space: nowrap;
   overflow: hidden;
-  direction: rtl;
+  border-top: 0.5px dashed #799DDE;
+  border-bottom: 0.5px dashed #799DDE;
+  font-size: 20pt;
+  line-height: 1;
 }
 
-.sign-card .card-main {
-  font-size: 18pt;
-  line-height: 1.35;
-  word-break: break-word;
-}
-
-.sign-card .series-name { font-weight: 700; }
-.sign-card .separator   { font-weight: 400; margin: 0 .15em; }
+.sign-card .series-name { font-weight: 600; }
+.sign-card .separator   { font-weight: 400; opacity: .6; margin: 0 .15em; }
 .sign-card .author-name { font-weight: 400; }
 
-.sign-card .cat-label {
-  font-size: 10pt;
-  font-weight: 600;
-  margin-top: 3mm;
-  opacity: .72;
+/* ===== TASA ===== */
+.tasa-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
 }
+.tasa-opt {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: box-shadow .15s;
+  padding: 0;
+}
+.tasa-opt[data-tasa=""] {
+  background: #f0f0f0;
+  color: #888;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tasa-opt.active {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent);
+  border-color: transparent;
+}
+.sign-card .tasa-strip {
+  width: 10mm;
+  flex-shrink: 0;
+  align-self: stretch;
+  border-inline-end: 0.5px dashed #799DDE;
+}
+.sign-card .text-zone.tasa { padding: 0; }
+.sign-card .text-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5mm;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 
 /* ===== PRINT STYLES ===== */
 @media print {
@@ -273,10 +388,25 @@ html, body {
     box-shadow: none;
     padding: 0;
     page-break-after: always;
-    grid-auto-rows: 60mm;
   }
 
   .a4-page:last-child { page-break-after: avoid; }
+
+  .sign-card {
+    break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* ----- Tab-aware print visibility ----- */
+  body[data-tab="age"]     #preview-columns { display: none !important; }
+  body[data-tab="columns"] #preview-pane    { display: none !important; }
+  body[data-tab="columns"] .col-preview-wrapper { padding: 0 !important; }
+  body[data-tab="columns"] .col-sign-scaler {
+    transform: scale(0.642) !important;
+    transform-origin: top left !important;
+    margin-bottom: -426px !important;
+  }
 }
 </style>
 </head>
@@ -284,8 +414,14 @@ html, body {
 
 <!-- ===== HEADER ===== -->
 <header class="app-header">
-  <h1>📚 יצירת כרטיסי גיל — ספרייה</h1>
-  <button class="btn-print" onclick="window.print()">🖨 הדפס / שמור כ-PDF</button>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-age"     onclick="switchTab('age')">כרטיסי גיל</button>
+    <button class="tab-btn"        id="tab-columns" onclick="switchTab('columns')">שלטי עמודות</button>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn-print" onclick="handlePrint()">🖨 הדפס</button>
+    <button class="btn-print btn-pdf" id="btn-pdf" onclick="handlePDF()">📄 שמור PDF</button>
+  </div>
 </header>
 
 <!-- ===== LAYOUT ===== -->
@@ -294,129 +430,280 @@ html, body {
   <!-- ===== SIDEBAR ===== -->
   <aside class="sidebar">
 
-    <!-- Add card form -->
-    <div>
-      <div class="section-title">הוסף כרטיס</div>
-      <div class="form-group">
-        <label for="inp-series">שם הסדרה / הספר</label>
-        <input id="inp-series" type="text" placeholder="למשל: הארי פוטר" autocomplete="off"/>
+    <!-- Panel: age cards (existing) -->
+    <div id="panel-age">
+
+      <!-- Add card form -->
+      <div>
+        <div class="section-title" id="form-title">הוסף כרטיס</div>
+        <div class="form-group">
+          <label for="inp-series">שם הסדרה / הספר</label>
+          <input id="inp-series" type="text" placeholder="למשל: הארי פוטר" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label for="inp-author">שם המחבר/ת</label>
+          <input id="inp-author" type="text" placeholder="למשל: ג'יי.קיי. רולינג" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label for="inp-dir">כיוון טקסט</label>
+          <select id="inp-dir">
+            <option value="rtl">עברית ← (ימין לשמאל)</option>
+            <option value="ltr">English → (Left to Right)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>טסה</label>
+          <div class="tasa-picker" id="tasa-picker">
+            <button class="tasa-opt active" data-tasa="" title="ללא טסה" onclick="setTasa(this)">✕</button>
+            <button class="tasa-opt" data-tasa="#7B3F00" style="background:#7B3F00" title="חום" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#E91E8C" style="background:#E91E8C" title="ורוד" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#7B2FBE" style="background:#7B2FBE" title="סגול" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#FFFFFF" style="background:#FFFFFF" title="לבן" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#1565C0" style="background:#1565C0" title="כחול" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#E65100" style="background:#E65100" title="כתום" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#C62828" style="background:#C62828" title="אדום" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#2E7D32" style="background:#2E7D32" title="ירוק" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#F9A825" style="background:#F9A825" title="צהוב" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#212121" style="background:#212121" title="שחור" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#9E9E9E" style="background:#9E9E9E" title="אפור" onclick="setTasa(this)"></button>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-submit" onclick="submitForm()">+ הוסף כרטיס</button>
+        <button class="btn btn-secondary" id="btn-cancel" style="display:none;margin-top:6px;" onclick="cancelEdit()">ביטול</button>
       </div>
-      <div class="form-group">
-        <label for="inp-author">שם המחבר/ת</label>
-        <input id="inp-author" type="text" placeholder="למשל: ג'יי.קיי. רולינג" autocomplete="off"/>
+
+      <hr class="divider"/>
+
+      <!-- URL import from library catalog -->
+      <div class="csv-area">
+        <div class="section-title">ייבוא מקטלוג הספרייה</div>
+        <p class="csv-hint">הדבק קישור מ-lod.library.org.il</p>
+        <div class="url-import-row">
+          <input id="inp-url" type="url" dir="ltr" placeholder="https://lod.library.org.il/..."/>
+          <button id="btn-url-import" class="btn btn-secondary" onclick="importFromLibraryURL()">ייבא</button>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="inp-cat">קטגוריית גיל</label>
-        <select id="inp-cat">
-          <option value="גיל רך">גיל רך (0–6)</option>
-          <option value="ילדים">ילדים (7–12)</option>
-          <option value="נוער">נוער (13–18)</option>
-          <option value="מבוגרות/ים">מבוגרות/ים (18+)</option>
-          <option value="מיוחדים">מיוחדים</option>
-          <option value="אחר">אחר</option>
-        </select>
+
+      <hr class="divider"/>
+
+      <!-- CSV import -->
+      <div class="csv-area">
+        <div class="section-title">ייבוא CSV</div>
+        <p class="csv-hint">עמודות: <code>series,author</code> (שורת כותרת נדרשת)</p>
+        <button class="btn btn-secondary" onclick="downloadCSVTemplate()">⬇ הורד תבנית CSV</button>
+        <input type="file" id="csv-file" accept=".csv,text/csv"/>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="csv-dir">כיוון לכל הייבוא</label>
+          <select id="csv-dir">
+            <option value="rtl">עברית ← (ימין לשמאל)</option>
+            <option value="ltr">English → (Left to Right)</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary" onclick="importCSV()">ייבא קובץ CSV</button>
       </div>
-      <button class="btn btn-primary" onclick="addCard()">+ הוסף כרטיס</button>
+
+      <hr class="divider"/>
+
+      <!-- Clear all -->
+      <button class="btn btn-secondary" style="color:#c0392b" onclick="clearAll()">🗑 נקה הכל</button>
+
+      <hr class="divider"/>
+
+      <!-- Card list -->
+      <div>
+        <div class="section-title">כרטיסים (<span id="count">0</span>)</div>
+        <div class="card-list" id="card-list">
+          <div class="empty-hint">עדיין אין כרטיסים.<br/>הוסף למעלה או ייבא CSV.</div>
+        </div>
+      </div>
+
     </div>
 
-    <hr class="divider"/>
+    <!-- Panel: column sign form -->
+    <div id="panel-columns" style="display:none;">
+      <div class="section-title">שלט עמודות</div>
 
-    <!-- CSV import -->
-    <div class="csv-area">
-      <div class="section-title">ייבוא CSV</div>
-      <p class="csv-hint">עמודות: <code>series,author,category</code> (שורת כותרת נדרשת)</p>
-      <input type="file" id="csv-file" accept=".csv,text/csv"/>
-      <button class="btn btn-secondary" onclick="importCSV()">ייבא קובץ CSV</button>
-    </div>
+      <div class="section-title" style="font-size:.8rem;opacity:.7;margin-top:0;margin-bottom:6px;">↑ עמודה עליונה</div>
+      <div class="form-group">
+        <label for="col-range1-top">אות ראשונה (ימין)</label>
+        <input id="col-range1-top" type="text" placeholder="א" autocomplete="off" maxlength="1"/>
+      </div>
+      <div class="form-group">
+        <label for="col-range2-top">אות אחרונה (שמאל)</label>
+        <input id="col-range2-top" type="text" placeholder="ת" autocomplete="off" maxlength="1"/>
+      </div>
+      <div class="form-group">
+        <label for="col-cat-top">מחלקה</label>
+        <input id="col-cat-top" type="text" placeholder="למשל: ספרות" autocomplete="off"/>
+      </div>
 
-    <hr class="divider"/>
+      <hr class="divider"/>
 
-    <!-- Clear all -->
-    <button class="btn btn-secondary" style="color:#c0392b" onclick="clearAll()">🗑 נקה הכל</button>
-
-    <hr class="divider"/>
-
-    <!-- Card list -->
-    <div>
-      <div class="section-title">כרטיסים (<span id="count">0</span>)</div>
-      <div class="card-list" id="card-list">
-        <div class="empty-hint">עדיין אין כרטיסים.<br/>הוסף למעלה או ייבא CSV.</div>
+      <div class="section-title" style="font-size:.8rem;opacity:.7;margin-top:0;margin-bottom:6px;">↓ עמודה תחתונה</div>
+      <div class="form-group">
+        <label for="col-range1-bot">אות ראשונה (ימין)</label>
+        <input id="col-range1-bot" type="text" placeholder="א" autocomplete="off" maxlength="1"/>
+      </div>
+      <div class="form-group">
+        <label for="col-range2-bot">אות אחרונה (שמאל)</label>
+        <input id="col-range2-bot" type="text" placeholder="ת" autocomplete="off" maxlength="1"/>
+      </div>
+      <div class="form-group">
+        <label for="col-cat-bot">מחלקה</label>
+        <input id="col-cat-bot" type="text" placeholder="למשל: ספרות" autocomplete="off"/>
       </div>
     </div>
 
   </aside>
 
-  <!-- ===== PREVIEW PANE ===== -->
-  <main class="preview-pane" id="preview-pane">
-    <!-- A4 pages injected here by JS -->
-  </main>
+  <!-- ===== PREVIEW AREA ===== -->
+  <div style="position:relative;overflow:hidden;display:flex;flex-direction:column;">
+
+    <!-- Age cards preview (existing) -->
+    <main class="preview-pane" id="preview-pane" style="flex:1;">
+      <!-- A4 pages injected here by JS -->
+    </main>
+
+    <!-- Column sign preview (new) -->
+    <div class="preview-pane" id="preview-columns" style="display:none;flex:1;">
+      <div class="col-preview-wrapper">
+        <div class="col-sign-scaler">
+
+          <div id="column-sign" style="width:1684px;height:1190px;background:#fff;position:relative;overflow:hidden;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
+
+            <!-- Static SVG layer: arrows, divider, border (exact paths from design) -->
+            <svg style="position:absolute;left:0;top:0;pointer-events:none;" width="1684" height="1190" viewBox="0 0 1684 1190" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Top right-pointing arrow -->
+              <path d="M1127.29 434.917L1181.92 489.55L1182.63 490.26L1181.92 490.968L1127.03 545.343L1126.31 546.053L1125.6 545.328L1117.36 536.824L1116.67 536.11L1117.37 535.414L1156.6 496.927H502.01V483.588H1156.63L1117.63 444.838L1116.93 444.141L1117.61 443.431L1125.86 434.927L1126.57 434.199L1127.29 434.917Z" fill="#2956AA" stroke="#2956AA" stroke-width="2"/>
+              <!-- Horizontal divider -->
+              <path d="M1659 594.031H25V596.466H1659V594.031Z" fill="#2956AA"/>
+              <!-- Bottom left-pointing arrow -->
+              <path d="M556.936 995.559L502.303 1050.19L501.594 1050.9L502.306 1051.61L557.198 1105.98L557.916 1106.7L558.619 1105.97L566.866 1097.47L567.557 1096.75L566.848 1096.06L527.621 1057.57H1182.21V1044.23H527.597L566.595 1005.48L567.296 1004.78L566.608 1004.07L558.361 995.569L557.655 994.841L556.936 995.559Z" fill="#2956AA" stroke="#2956AA" stroke-width="2"/>
+              <!-- Border -->
+              <rect x="26.9187" y="26.714" width="1630.16" height="1137.07" stroke="#2956AA" stroke-width="18.31"/>
+            </svg>
+
+            <!-- Top dynamic content block (full-width so align-items:center truly centers) -->
+            <div style="position:absolute;left:0;top:109.20px;width:1684px;display:flex;flex-direction:column;align-items:center;gap:36.42px;">
+              <span id="col-cat-top-el" style="width:875.22px;text-align:center;font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);white-space:nowrap;overflow:hidden;">מחלקה</span>
+              <div style="display:flex;width:641.07px;align-items:flex-start;gap:63.63px;direction:ltr;">
+                <div style="width:187px;height:231px;flex-shrink:0;position:relative;overflow:visible;">
+                  <span id="col-l2-top" style="position:absolute;left:50%;transform:translateX(-50%);top:-120px;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">ת</span>
+                </div>
+                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;margin-top:25px;"></div>
+                <div style="width:187px;height:231px;flex-shrink:0;position:relative;overflow:visible;">
+                  <span id="col-l1-top" style="position:absolute;left:50%;transform:translateX(-50%);top:-120px;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">א</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom dynamic content block -->
+            <div style="position:absolute;left:0;top:669.84px;width:1684px;display:flex;flex-direction:column;align-items:center;gap:36.42px;">
+              <span id="col-cat-bot-el" style="width:875.22px;text-align:center;font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);white-space:nowrap;overflow:hidden;">מחלקה</span>
+              <div style="display:flex;width:641.07px;align-items:flex-start;gap:63.63px;direction:ltr;">
+                <div style="width:187px;height:231px;flex-shrink:0;position:relative;overflow:visible;">
+                  <span id="col-l2-bot" style="position:absolute;left:50%;transform:translateX(-50%);top:-120px;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">ת</span>
+                </div>
+                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;margin-top:25px;"></div>
+                <div style="width:187px;height:231px;flex-shrink:0;position:relative;overflow:visible;">
+                  <span id="col-l1-bot" style="position:absolute;left:50%;transform:translateX(-50%);top:-120px;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">א</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
 
 </div>
 
 <script>
-// ===== COLOR MAP =====
-const COLORS = {
-  'אחר':         { bg: '#2956AA', text: '#FFFFFF' },
-  'מיוחדים':     { bg: '#FFC980', text: '#603700' },
-  'גיל רך':      { bg: '#FFE9BD', text: '#6E4A00' },
-  'ילדים':       { bg: '#FFE9BD', text: '#6E4A00' },
-  'נוער':        { bg: '#77DFD5', text: '#13534D' },
-  'מבוגרות/ים':  { bg: '#F7F7F9', text: '#262A33' },
-};
-
-const CATEGORY_LABELS = {
-  'אחר':        'אחר',
-  'מיוחדים':    'מיוחדים',
-  'גיל רך':     'גיל רך (0–6)',
-  'ילדים':      'ילדים (7–12)',
-  'נוער':       'נוער (13–18)',
-  'מבוגרות/ים': 'מבוגרות/ים (18+)',
-};
-
-const CARDS_PER_PAGE = 8; // 2 cols × 4 rows
-
-let cards = []; // { series, author, category }
+let cards = []; // { series, author, dir }
+let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
+let activeTab = 'age'; // 'age' | 'columns'
 
 // ===== HELPERS =====
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-function resolveCategory(raw) {
-  const key = (raw || '').trim();
-  // Try exact match, then lowercase, then fallback
-  if (COLORS[key]) return key;
-  const lower = key.toLowerCase();
-  const aliases = {
-    'other': 'אחר', 'special': 'מיוחדים',
-    '0-6': 'גיל רך', 'גיל-רך': 'גיל רך', 'baby': 'גיל רך',
-    '7-12': 'ילדים', 'children': 'ילדים', 'kids': 'ילדים',
-    '13-18': 'נוער', 'teen': 'נוער', 'teens': 'נוער', 'youth': 'נוער',
-    '18+': 'מבוגרות/ים', 'adults': 'מבוגרות/ים', 'adult': 'מבוגרות/ים',
-    'מבוגרים': 'מבוגרות/ים',
-  };
-  return aliases[lower] || 'אחר';
+function setTasa(btn) {
+  document.querySelectorAll('.tasa-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function getSelectedTasa() {
+  return document.querySelector('.tasa-opt.active')?.dataset.tasa || '';
 }
 
-// ===== ADD / REMOVE =====
-function addCard(series, author, category) {
-  if (series === undefined) {
-    series   = document.getElementById('inp-series').value.trim();
-    author   = document.getElementById('inp-author').value.trim();
-    category = document.getElementById('inp-cat').value;
-    if (!series) { document.getElementById('inp-series').focus(); return; }
+// ===== ADD / EDIT / REMOVE =====
+function submitForm() {
+  const series = document.getElementById('inp-series').value.trim();
+  const author = document.getElementById('inp-author').value.trim();
+  const dir    = document.getElementById('inp-dir').value;
+  const tasa   = getSelectedTasa();
+  if (!series) { document.getElementById('inp-series').focus(); return; }
+
+  if (editingIdx >= 0) {
+    cards[editingIdx] = { series, author, dir, tasa };
+    cancelEdit();
+  } else {
+    cards.push({ series, author, dir, tasa });
     document.getElementById('inp-series').value = '';
     document.getElementById('inp-author').value = '';
     document.getElementById('inp-series').focus();
   }
-  category = resolveCategory(category);
-  cards.push({ series, author, category });
   render();
 }
 
-function removeCard(idx) {
-  cards.splice(idx, 1);
+function addCard(series, author, _category, dir) {
+  // kept for CSV import path (_category ignored, tasa defaults to none)
+  cards.push({ series, author, dir: dir || 'rtl', tasa: '' });
   render();
+}
+
+function editCard(idx) {
+  const c = cards[idx];
+  editingIdx = idx;
+  document.getElementById('inp-series').value = c.series;
+  document.getElementById('inp-author').value  = c.author || '';
+  document.getElementById('inp-dir').value     = c.dir || 'rtl';
+  const tasaColor = c.tasa || '';
+  document.querySelectorAll('.tasa-opt').forEach(b =>
+    b.classList.toggle('active', b.dataset.tasa === tasaColor)
+  );
+  document.getElementById('form-title').textContent  = 'ערוך כרטיס';
+  document.getElementById('btn-submit').textContent  = '✔ שמור שינויים';
+  document.getElementById('btn-cancel').style.display = '';
+  document.getElementById('inp-series').focus();
+  document.querySelector('.sidebar').scrollTop = 0;
+}
+
+function cancelEdit() {
+  editingIdx = -1;
+  document.getElementById('inp-series').value = '';
+  document.getElementById('inp-author').value  = '';
+  document.querySelectorAll('.tasa-opt').forEach(b =>
+    b.classList.toggle('active', b.dataset.tasa === '')
+  );
+  document.getElementById('form-title').textContent  = 'הוסף כרטיס';
+  document.getElementById('btn-submit').textContent  = '+ הוסף כרטיס';
+  document.getElementById('btn-cancel').style.display = 'none';
+}
+
+function removeCard(idx) {
+  if (editingIdx === idx) cancelEdit();
+  const items = document.querySelectorAll('.card-list-item');
+  const item = items[idx];
+  if (item) {
+    item.classList.add('removing');
+    setTimeout(() => { cards.splice(idx, 1); render(); }, 180);
+  } else {
+    cards.splice(idx, 1);
+    render();
+  }
 }
 
 function clearAll() {
@@ -426,19 +713,169 @@ function clearAll() {
   }
 }
 
+// ===== TABS =====
+function switchTab(tab) {
+  activeTab = tab;
+  document.body.dataset.tab = tab;
+  document.getElementById('tab-age').classList.toggle('active', tab === 'age');
+  document.getElementById('tab-columns').classList.toggle('active', tab === 'columns');
+  document.getElementById('panel-age').style.display     = tab === 'age'     ? '' : 'none';
+  document.getElementById('panel-columns').style.display = tab === 'columns' ? '' : 'none';
+  document.getElementById('preview-pane').style.display     = tab === 'age'     ? '' : 'none';
+  document.getElementById('preview-columns').style.display  = tab === 'columns' ? '' : 'none';
+  if (tab === 'columns') requestAnimationFrame(updateColumnSignScale);
+}
+
+function updateColumnSign() {
+  const r1Top  = document.getElementById('col-range1-top').value.trim();
+  const r2Top  = document.getElementById('col-range2-top').value.trim();
+  const catTop = document.getElementById('col-cat-top').value.trim() || 'מחלקה';
+  const r1Bot  = document.getElementById('col-range1-bot').value.trim();
+  const r2Bot  = document.getElementById('col-range2-bot').value.trim();
+  const catBot = document.getElementById('col-cat-bot').value.trim() || 'מחלקה';
+  document.getElementById('col-cat-top-el').textContent = catTop;
+  document.getElementById('col-l1-top').textContent     = r1Top.charAt(0) || 'א';
+  document.getElementById('col-l2-top').textContent     = r2Top.charAt(0) || 'ת';
+  document.getElementById('col-cat-bot-el').textContent = catBot;
+  document.getElementById('col-l1-bot').textContent     = r1Bot.charAt(0) || 'א';
+  document.getElementById('col-l2-bot').textContent     = r2Bot.charAt(0) || 'ת';
+}
+
+function updateColumnSignScale() {
+  const pane = document.getElementById('preview-columns');
+  if (!pane || pane.style.display === 'none') return;
+  const scaler = pane.querySelector('.col-sign-scaler');
+  if (!scaler) return;
+  const availW = pane.clientWidth - 48;
+  const scale  = Math.min(1, availW / 1684);
+  scaler.style.transform    = `scale(${scale})`;
+  scaler.style.marginBottom = `${Math.round(1190 * scale - 1190)}px`;
+}
+
+async function saveColumnPDF() {
+  const sign = document.getElementById('column-sign');
+  const btn  = document.getElementById('btn-pdf');
+  btn.textContent = '⏳ מכין...';
+  btn.disabled    = true;
+  try {
+    const scaler = document.querySelector('.col-sign-scaler');
+    const prev   = scaler.style.transform;
+    scaler.style.transform = 'none';
+    await document.fonts.ready;
+    await new Promise(r => requestAnimationFrame(r));
+    const canvas = await html2canvas(sign, {
+      scale: 2, useCORS: true, allowTaint: true,
+      backgroundColor: '#ffffff', logging: false,
+      width: 1684, height: 1190,
+    });
+    scaler.style.transform = prev;
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const W = 297, H = 210;
+    const imgData = canvas.toDataURL('image/png');
+    const imgH    = (canvas.height / canvas.width) * W;
+    pdf.addImage(imgData, 'PNG', 0, Math.max(0, (H - imgH) / 2), W, Math.min(imgH, H));
+    pdf.save('שלט-עמודות.pdf');
+  } catch (e) {
+    alert('שגיאה: ' + e.message);
+  } finally {
+    btn.textContent = '📄 שמור PDF';
+    btn.disabled    = false;
+  }
+}
+
+function handlePDF() {
+  if (activeTab === 'age') savePDF();
+  else saveColumnPDF();
+}
+
+function handlePrint() {
+  if (activeTab === 'columns') {
+    const s = document.createElement('style');
+    s.textContent = '@page { size: A4 landscape; margin: 5mm; }';
+    document.head.appendChild(s);
+    window.print();
+    s.remove();
+  } else {
+    window.print();
+  }
+}
+
+// ===== LIBRARY URL IMPORT =====
+async function importFromLibraryURL() {
+  const input = document.getElementById('inp-url');
+  const btn   = document.getElementById('btn-url-import');
+  const url   = input.value.trim();
+  if (!url) return;
+
+  if (!url.includes('lod.library.org.il')) {
+    alert('כרגע נתמך רק קישור מ-lod.library.org.il');
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = 'טוען…';
+
+  try {
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl);
+    if (!response.ok) throw new Error('שגיאת רשת (' + response.status + ')');
+    const data = await response.json();
+    const doc  = new DOMParser().parseFromString(data.contents, 'text/html');
+
+    let series = '', author = '';
+
+    for (const strong of doc.querySelectorAll('strong')) {
+      const label = strong.textContent.trim();
+      const next  = strong.nextElementSibling;
+      if (label === 'סדרה' && next && next.tagName === 'A') {
+        series = next.textContent.trim();
+      }
+      if ((label === 'מחבר' || label === 'מחבר/ת') && next && next.tagName === 'A') {
+        author = next.textContent.trim();
+      }
+    }
+
+    // fallback: search within parent element
+    if (!series) {
+      const el = [...doc.querySelectorAll('strong')].find(s => s.textContent.trim() === 'סדרה');
+      if (el) {
+        const a = el.closest('td,li,div,p') && el.closest('td,li,div,p').querySelector('a');
+        if (a) series = a.textContent.trim();
+      }
+    }
+
+    if (!series) {
+      alert('לא נמצאה סדרה בדף. ייתכן שמדובר בספר שאינו חלק מסדרה.');
+      return;
+    }
+
+    const dir = /[\u0590-\u05FF]/.test(series) ? 'rtl' : 'ltr';
+    cards.push({ series, author, dir, tasa: '' });
+    render();
+    input.value = '';
+
+  } catch (e) {
+    alert('שגיאה בטעינת הדף: ' + (e.message || e));
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'ייבא';
+  }
+}
+
 // ===== CSV IMPORT =====
 function importCSV() {
   const file = document.getElementById('csv-file').files[0];
   if (!file) { alert('בחרי/בחר קובץ CSV תחילה.'); return; }
   const reader = new FileReader();
   reader.onload = e => {
-    const text = e.target.result;
-    parseCSV(text);
+    const dir = document.getElementById('csv-dir').value;
+    parseCSV(e.target.result, dir);
   };
   reader.readAsText(file, 'utf-8');
 }
 
-function parseCSV(text) {
+function parseCSV(text, dir = 'rtl') {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (!lines.length) return;
 
@@ -453,8 +890,7 @@ function parseCSV(text) {
     if (cols.length < 1) continue;
     const series   = (cols[0] || '').trim();
     const author   = (cols[1] || '').trim();
-    const category = resolveCategory(cols[2] || 'אחר');
-    if (series) { cards.push({ series, author, category }); added++; }
+    if (series) { cards.push({ series, author, dir }); added++; }
   }
   render();
   if (added) alert(`יובאו ${added} כרטיסים.`);
@@ -479,23 +915,56 @@ function splitCSVLine(line) {
   return result;
 }
 
+// ===== PAGINATION =====
+// Measures actual rendered card positions to split into A4 pages
+async function paginateCards() {
+  const PAGE_H_MM = 277; // A4 297mm - 10mm top padding - 10mm bottom padding
+  const MM_PX = 96 / 25.4;
+  const pageHpx = PAGE_H_MM * MM_PX;
+
+  const temp = document.createElement('div');
+  Object.assign(temp.style, {
+    position: 'fixed', visibility: 'hidden', top: '0', left: '0',
+    width: '190mm', display: 'flex', flexWrap: 'wrap',
+    columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
+  });
+  temp.innerHTML = cards.map(buildCardHTML).join('');
+  document.body.appendChild(temp);
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  const els = [...temp.querySelectorAll('.sign-card')];
+  const pages = [[]];
+  els.forEach((el, i) => {
+    const pageIdx = pages.length - 1;
+    const relBottom = el.offsetTop + el.offsetHeight - pageIdx * pageHpx;
+    if (relBottom > pageHpx && pages[pageIdx].length > 0) {
+      pages.push([cards[i]]);
+    } else {
+      pages[pageIdx].push(cards[i]);
+    }
+  });
+
+  document.body.removeChild(temp);
+  return pages;
+}
+
 // ===== RENDER =====
 function buildCardHTML(card) {
-  const colors = COLORS[card.category] || COLORS['אחר'];
-  const label  = CATEGORY_LABELS[card.category] || card.category;
-  return `<div class="sign-card" style="background:${colors.bg};color:${colors.text};">
-  <div class="card-main">
-    <span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>
-  </div>
-  <div class="cat-label">${escHtml(label)}</div>
+  const dir  = card.dir  || 'rtl';
+  const tasa = card.tasa || '';
+  const textSpans = card.author
+    ? `<span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author)}</span>`
+    : `<span class="series-name">${escHtml(card.series)}</span>`;
+  const textZoneInner = tasa
+    ? `<div class="tasa-strip" style="background:${tasa}"></div><div class="text-content">${textSpans}</div>`
+    : textSpans;
+  return `<div class="sign-card" style="direction:${dir};">
+  <div class="fold"></div>
+  <div class="text-zone${tasa ? ' tasa' : ''}">${textZoneInner}</div>
+  <div class="fold"></div>
 </div>`;
 }
 
-function chunk(arr, size) {
-  const out = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
 
 function render() {
   // Update count
@@ -507,13 +976,14 @@ function render() {
     list.innerHTML = '<div class="empty-hint">עדיין אין כרטיסים.<br/>הוסף למעלה או ייבא CSV.</div>';
   } else {
     list.innerHTML = cards.map((c, i) => {
-      const col = (COLORS[c.category] || COLORS['אחר']).bg;
       return `<div class="card-list-item">
-        <span class="card-list-dot" style="background:${col}"></span>
+        <span class="card-list-dot" style="background:#2956AA"></span>
         <span class="card-list-text">
           <span class="card-list-series">${escHtml(c.series)}</span>
           ${c.author ? `<span class="card-list-author"> — ${escHtml(c.author)}</span>` : ''}
+          ${c.dir === 'ltr' ? '<span class="card-list-author"> · EN</span>' : ''}
         </span>
+        <button class="btn-edit" title="ערוך" onclick="editCard(${i})">✎</button>
         <button class="btn-del" title="מחק" onclick="removeCard(${i})">✕</button>
       </div>`;
     }).join('');
@@ -526,10 +996,74 @@ function render() {
     return;
   }
 
-  const pages = chunk(cards, CARDS_PER_PAGE);
-  pane.innerHTML = pages.map(pageCards =>
-    `<div class="a4-page">${pageCards.map(buildCardHTML).join('\n')}</div>`
-  ).join('\n');
+  paginateCards().then(pages => {
+    pane.innerHTML = pages.map(pageCards =>
+      `<div class="a4-page">${pageCards.map(buildCardHTML).join('\n')}</div>`
+    ).join('\n');
+  });
+}
+
+// ===== CSV TEMPLATE =====
+function downloadCSVTemplate() {
+  const rows = [
+    'series,author',
+    'הארי פוטר,ג\'יי.קיי. רולינג',
+    'ארנב שרוצה לישון,קרל-יוהן פורסן ארלין',
+    'שם הסדרה,שם המחבר/ת',
+    ',',
+  ];
+  const blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'תבנית-כרטיסי-ספרייה.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ===== PDF EXPORT =====
+async function savePDF() {
+  const pages = document.querySelectorAll('.a4-page');
+  if (!pages.length) { alert('אין כרטיסים להורדה'); return; }
+
+  const btn = document.getElementById('btn-pdf');
+  btn.textContent = '⏳ מכין...';
+  btn.disabled = true;
+
+  try {
+    await document.fonts.ready;
+    await new Promise(r => requestAnimationFrame(r));
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const A4_W = 210, A4_H = 297;
+
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = await html2canvas(pages[i], {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        onclone: (_doc, el) => {
+          el.querySelectorAll('.sign-card').forEach(card => {
+            card.style.animation = 'none';
+            card.style.opacity   = '1';
+            card.style.transform = 'none';
+          });
+        },
+      });
+      if (i > 0) pdf.addPage();
+      const imgData = canvas.toDataURL('image/png');
+      const imgH = (canvas.height / canvas.width) * A4_W;
+      pdf.addImage(imgData, 'PNG', 0, 0, A4_W, Math.min(imgH, A4_H));
+    }
+
+    pdf.save('כרטיסי-ספרייה.pdf');
+  } catch (e) {
+    alert('שגיאה ביצירת PDF: ' + e.message);
+  } finally {
+    btn.textContent = '📄 שמור PDF';
+    btn.disabled = false;
+  }
 }
 
 // ===== KEYBOARD SHORTCUT =====
@@ -538,7 +1072,17 @@ document.addEventListener('keydown', e => {
 });
 
 // ===== INIT =====
+document.body.dataset.tab = 'age';
 render();
+updateColumnSign();
+
+['col-range1-top','col-range2-top','col-cat-top','col-range1-bot','col-range2-bot','col-cat-bot']
+  .forEach(id => document.getElementById(id).addEventListener('input', updateColumnSign));
+
+const _colPane = document.getElementById('preview-columns');
+if (_colPane && window.ResizeObserver) {
+  new ResizeObserver(updateColumnSignScale).observe(_colPane);
+}
 </script>
 </body>
 </html>
