@@ -724,9 +724,9 @@ async function saveColumnPDF() {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const W = 297, H = 210;
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgData = canvas.toDataURL('image/png');
     const imgH    = (canvas.height / canvas.width) * W;
-    pdf.addImage(imgData, 'JPEG', 0, Math.max(0, (H - imgH) / 2), W, Math.min(imgH, H));
+    pdf.addImage(imgData, 'PNG', 0, Math.max(0, (H - imgH) / 2), W, Math.min(imgH, H));
     pdf.save('שלט-עמודות.pdf');
   } catch (e) {
     alert('שגיאה: ' + e.message);
@@ -937,9 +937,9 @@ async function savePDF() {
         logging: false,
       });
       if (i > 0) pdf.addPage();
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const imgData = canvas.toDataURL('image/png');
       const imgH = (canvas.height / canvas.width) * A4_W;
-      pdf.addImage(imgData, 'JPEG', 0, 0, A4_W, Math.min(imgH, A4_H));
+      pdf.addImage(imgData, 'PNG', 0, 0, A4_W, Math.min(imgH, A4_H));
     }
 
     pdf.save('כרטיסי-ספרייה.pdf');
