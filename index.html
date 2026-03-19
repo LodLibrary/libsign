@@ -48,6 +48,11 @@ html, body {
     top: 0;
     z-index: 100;
     box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    animation: headerSlideDown .35s ease both;
+  }
+  @keyframes headerSlideDown {
+    from { opacity: 0; transform: translateY(-100%); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   .app-header h1 {
@@ -86,6 +91,11 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    animation: sidebarSlideIn .4s ease both;
+  }
+  @keyframes sidebarSlideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
   }
 
   .section-title {
@@ -109,8 +119,17 @@ html, body {
     direction: rtl;
     width: 100%;
   }
+  .form-group input,
+  .form-group select {
+    transition: border-color .2s, box-shadow .2s, transform .15s;
+  }
   .form-group input:focus,
-  .form-group select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(41,86,170,.15);
+    transform: scale(1.01);
+  }
 
   .btn {
     display: inline-flex;
@@ -124,12 +143,14 @@ html, body {
     font-weight: 600;
     cursor: pointer;
     border: none;
-    transition: opacity .15s, transform .12s;
+    transition: opacity .15s, transform .15s, box-shadow .2s, background .2s;
   }
-  .btn:hover  { opacity: .88; }
-  .btn:active { transform: scale(0.95); }
+  .btn:hover  { opacity: .92; transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.12); }
+  .btn:active { transform: scale(0.96) translateY(0); box-shadow: none; }
   .btn-primary   { background: var(--accent); color: #fff; width: 100%; }
+  .btn-primary:hover { background: #1e448e; }
   .btn-secondary { background: #e8edf8; color: var(--accent); width: 100%; }
+  .btn-secondary:hover { background: #d6e0f5; }
 
   .divider { border: none; border-top: 1px solid var(--border); }
 
@@ -163,11 +184,19 @@ html, body {
     border-radius: 6px;
     border: 1px solid var(--border);
     font-size: .85rem;
-    animation: slideInItem .2s ease both;
-    transition: background .15s, transform .15s, opacity .18s;
+    animation: slideInItem .25s cubic-bezier(.34,1.56,.64,1) both;
+    transition: background .2s, transform .2s, opacity .2s, box-shadow .2s, border-color .2s;
   }
-  .card-list-item:hover { background: var(--ui-bg); }
-  .card-list-item.removing { opacity: 0; transform: translateX(12px); }
+  .card-list-item:hover {
+    background: var(--ui-bg);
+    transform: translateX(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(41,86,170,.1);
+  }
+  .card-list-item.removing {
+    opacity: 0;
+    transform: translateX(20px) scale(0.95);
+  }
 
   .card-list-dot {
     width: 12px;
@@ -198,9 +227,9 @@ html, body {
     flex-shrink: 0;
     transition: color .12s, background .12s, transform .1s;
   }
-  .btn-edit:hover  { color: var(--accent); background: #e8edf8; }
-  .btn-del:hover   { color: var(--danger);  background: #ffeaea; }
-  .btn-edit:active, .btn-del:active { transform: scale(0.82); }
+  .btn-edit:hover  { color: var(--accent); background: #e8edf8; transform: scale(1.15) rotate(-5deg); }
+  .btn-del:hover   { color: var(--danger);  background: #ffeaea; transform: scale(1.15) rotate(5deg); }
+  .btn-edit:active, .btn-del:active { transform: scale(0.85); }
 
   .empty-hint {
     text-align: center;
@@ -211,14 +240,70 @@ html, body {
 
   /* ----- Animations ----- */
   @keyframes slideInItem {
-    from { opacity: 0; transform: translateX(10px); }
-    to   { opacity: 1; transform: translateX(0); }
+    from { opacity: 0; transform: translateX(14px) scale(0.95); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
   }
   @keyframes fadeScaleIn {
-    from { opacity: 0; transform: scale(0.96); }
-    to   { opacity: 1; transform: scale(1); }
+    from { opacity: 0; transform: scale(0.92) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
   }
-  .sign-card { animation: fadeScaleIn .25s ease both; }
+  @keyframes popIn {
+    0%   { opacity: 0; transform: scale(0.5); }
+    70%  { transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .sign-card { animation: fadeScaleIn .3s cubic-bezier(.34,1.56,.64,1) both; }
+  .letter-card { animation: fadeScaleIn .3s cubic-bezier(.34,1.56,.64,1) both; }
+
+  /* Staggered card animation */
+  .sign-card:nth-child(n)  { animation-delay: calc(var(--i, 0) * 40ms); }
+  .letter-card:nth-child(n) { animation-delay: calc(var(--i, 0) * 40ms); }
+
+  /* Tasa color dot pulse on hover */
+  .card-list-dot { transition: transform .2s, box-shadow .2s; }
+  .card-list-item:hover .card-list-dot {
+    transform: scale(1.3);
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  /* Print button shine effect */
+  .btn-print {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-print::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+    transition: left .4s ease;
+  }
+  .btn-print:hover::after { left: 120%; }
+
+  /* Section title subtle entrance */
+  .section-title {
+    animation: slideInItem .3s ease both;
+  }
+
+  /* Letter stack hover */
+  .letter-stack {
+    transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+  }
+  .letter-stack:hover {
+    transform: scale(1.06) rotate(-1deg);
+  }
+  .letter-stack .stack-badge {
+    animation: popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+
+  /* Divider fade-in */
+  .divider {
+    animation: fadeScaleIn .4s ease both;
+  }
 
   /* ----- Preview pane ----- */
   .preview-pane {
@@ -237,6 +322,12 @@ html, body {
     background: #fff;
     padding: 10mm;
     box-shadow: 0 4px 24px rgba(0,0,0,.3);
+    transition: box-shadow .3s, transform .3s;
+    animation: fadeScaleIn .4s ease both;
+  }
+  .a4-page:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,.35);
+    transform: translateY(-2px);
   }
 
   /* ----- Tab bar ----- */
@@ -251,10 +342,16 @@ html, body {
     font-size: .95rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background .15s;
+    transition: background .2s, transform .15s, box-shadow .2s;
+    position: relative;
   }
-  .tab-btn.active { background: rgba(255,255,255,0.30); }
-  .tab-btn:hover  { background: rgba(255,255,255,0.22); }
+  .tab-btn.active {
+    background: rgba(255,255,255,0.30);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  .tab-btn:hover:not(.active) { background: rgba(255,255,255,0.22); transform: translateY(-1px); }
+  .tab-btn:active { transform: scale(0.97); }
 
   /* ----- Column sign preview ----- */
   .col-preview-wrapper {
@@ -331,9 +428,14 @@ html, body {
   border: 2px solid #ccc;
   cursor: pointer;
   flex-shrink: 0;
-  transition: box-shadow .15s;
+  transition: box-shadow .2s, transform .2s cubic-bezier(.34,1.56,.64,1), border-color .2s;
   padding: 0;
 }
+.tasa-opt:hover {
+  transform: scale(1.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+.tasa-opt:active { transform: scale(0.9); }
 .tasa-opt[data-tasa=""] {
   background: #f0f0f0;
   color: #888;
@@ -345,6 +447,7 @@ html, body {
 .tasa-opt.active {
   box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent);
   border-color: transparent;
+  transform: scale(1.15);
 }
 .sign-card .tasa-strip {
   width: 10mm;
@@ -1201,7 +1304,7 @@ function buildCardHTML(card) {
   const textZoneInner = tasa
     ? `<div class="tasa-strip" style="background:${tasa}"></div><div class="text-content">${textSpans}</div>`
     : textSpans;
-  return `<div class="sign-card" style="direction:${dir};">
+  return `<div class="sign-card" style="direction:${dir};--i:${card._i || 0};">
   <div class="fold"></div>
   <div class="text-zone${tasa ? ' tasa' : ''}">${textZoneInner}</div>
   <div class="fold"></div>
@@ -1219,8 +1322,8 @@ function render() {
     list.innerHTML = '<div class="empty-hint">עדיין אין כרטיסים.<br/>הוסף למעלה או ייבא CSV.</div>';
   } else {
     list.innerHTML = cards.map((c, i) => {
-      return `<div class="card-list-item">
-        <span class="card-list-dot" style="background:#2956AA"></span>
+      return `<div class="card-list-item" style="animation-delay:${i * 30}ms">
+        <span class="card-list-dot" style="background:${c.tasa || '#2956AA'}"></span>
         <span class="card-list-text">
           <span class="card-list-series">${escHtml(c.series)}</span>
           ${c.author ? `<span class="card-list-author"> — ${escHtml(c.author)}</span>` : ''}
@@ -1240,8 +1343,9 @@ function render() {
   }
 
   paginateCards().then(pages => {
+    let idx = 0;
     pane.innerHTML = pages.map(pageCards =>
-      `<div class="a4-page">${pageCards.map(buildCardHTML).join('\n')}</div>`
+      `<div class="a4-page">${pageCards.map(c => buildCardHTML(Object.assign({}, c, { _i: idx++ }))).join('\n')}</div>`
     ).join('\n');
   });
 }
@@ -1333,7 +1437,7 @@ function renderLetters() {
     list.innerHTML = '<div class="empty-hint">עדיין אין אותיות.<br/>הוסף למעלה.</div>';
   } else {
     list.innerHTML = letterCards.map((e, i) => {
-      return `<div class="card-list-item">
+      return `<div class="card-list-item" style="animation-delay:${i * 30}ms">
         <span class="card-list-dot" style="background:#2956AA"></span>
         <span class="card-list-text">
           <span class="card-list-series">${escHtml(e.char)}</span>
