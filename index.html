@@ -365,6 +365,70 @@ html, body {
 
 
 /* ===== PRINT STYLES ===== */
+/* ===== LETTER CARD (square) ===== */
+.letter-card {
+  display: inline-flex;
+  flex-direction: column;
+  width: 35mm;
+  height: 35mm;
+  flex-shrink: 0;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+  background: #ffffff;
+  color: #2956AA;
+  border: 0.5px dashed #799DDE;
+}
+.letter-card .fold {
+  height: 7.5mm;
+  flex-shrink: 0;
+}
+.letter-card .text-zone {
+  height: 20mm;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  border-top: 0.5px dashed #799DDE;
+  border-bottom: 0.5px dashed #799DDE;
+  font-size: 20pt;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Letter stack preview (screen only) */
+.letter-stack {
+  position: relative;
+  display: inline-block;
+  margin: 3mm;
+}
+.letter-stack .letter-card { position: relative; }
+.letter-stack .stack-shadow {
+  position: absolute;
+  width: 35mm;
+  height: 35mm;
+  border: 0.5px dashed #799DDE;
+  background: #fff;
+  border-radius: 2px;
+}
+.letter-stack .stack-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #2956AA;
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
 @media print {
 
   .app-header,
@@ -391,15 +455,22 @@ html, body {
 
   .a4-page:last-child { page-break-after: avoid; }
 
-  .sign-card {
+  .sign-card, .letter-card {
     break-inside: avoid;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
 
+  .letter-stack { display: inline-block; margin: 0; }
+  .stack-shadow, .stack-badge { display: none !important; }
+
   /* ----- Tab-aware print visibility ----- */
-  body[data-tab="age"]     #preview-columns { display: none !important; }
-  body[data-tab="columns"] #preview-pane    { display: none !important; }
+  body[data-tab="age"]     #preview-columns, body[data-tab="age"]     #preview-letters { display: none !important; }
+  body[data-tab="columns"] #preview-pane,    body[data-tab="columns"] #preview-letters { display: none !important; }
+  body[data-tab="letters"] #preview-pane,    body[data-tab="letters"] #preview-columns { display: none !important; }
+  body[data-tab="letters"] #preview-letters .letter-stack { margin: 0; }
+  body[data-tab="letters"] #preview-letters .stack-shadow,
+  body[data-tab="letters"] #preview-letters .stack-badge { display: none !important; }
   body[data-tab="columns"] #preview-columns > * { display: block !important; }
   body[data-tab="columns"] .col-preview-wrapper {
     padding: 0 !important;
@@ -423,6 +494,7 @@ html, body {
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-age"     onclick="switchTab('age')">כרטיסי גיל</button>
     <button class="tab-btn"        id="tab-columns" onclick="switchTab('columns')">שלטי עמודות</button>
+    <button class="tab-btn"        id="tab-letters" onclick="switchTab('letters')">אותיות מדף</button>
   </div>
   <div style="display:flex;gap:8px;">
     <button class="btn-print" onclick="handlePrint()">🖨 הדפס</button>
@@ -559,6 +631,40 @@ html, body {
       </div>
     </div>
 
+    <!-- Panel: shelf letters -->
+    <div id="panel-letters" style="display:none;">
+
+      <!-- Add letter form -->
+      <div>
+        <div class="section-title">הוסף אות</div>
+        <div class="form-group">
+          <label for="inp-letter">תו</label>
+          <input id="inp-letter" type="text" placeholder="למשל: א" autocomplete="off" maxlength="2"/>
+        </div>
+        <div class="form-group">
+          <label for="inp-letter-qty">כמות עותקים</label>
+          <input id="inp-letter-qty" type="number" value="1" min="1" max="100"/>
+        </div>
+        <button class="btn btn-primary" onclick="addLetterCards()">+ הוסף</button>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- Clear all -->
+      <button class="btn btn-secondary" style="color:#c0392b" onclick="clearLetters()">🗑 נקה הכל</button>
+
+      <hr class="divider"/>
+
+      <!-- Letter list -->
+      <div>
+        <div class="section-title">אותיות (<span id="letter-count">0</span>)</div>
+        <div class="card-list" id="letter-list">
+          <div class="empty-hint">עדיין אין אותיות.<br/>הוסף למעלה.</div>
+        </div>
+      </div>
+
+    </div>
+
   </aside>
 
   <!-- ===== PREVIEW AREA ===== -->
@@ -615,6 +721,11 @@ html, body {
       </div>
     </div>
 
+    <!-- Shelf letters preview -->
+    <main class="preview-pane" id="preview-letters" style="display:none;flex:1;">
+      <!-- A4 pages injected here by JS -->
+    </main>
+
   </div>
 
 </div>
@@ -622,7 +733,8 @@ html, body {
 <script>
 let cards = []; // { series, author, dir }
 let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
-let activeTab = 'age'; // 'age' | 'columns'
+let activeTab = 'age'; // 'age' | 'columns' | 'letters'
+let letterCards = []; // { char, qty }
 
 // ===== HELPERS =====
 function escHtml(s) {
@@ -715,13 +827,17 @@ function clearAll() {
 function switchTab(tab) {
   activeTab = tab;
   document.body.dataset.tab = tab;
-  document.getElementById('tab-age').classList.toggle('active', tab === 'age');
-  document.getElementById('tab-columns').classList.toggle('active', tab === 'columns');
+  ['age', 'columns', 'letters'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', tab === t);
+  });
   document.getElementById('panel-age').style.display     = tab === 'age'     ? '' : 'none';
   document.getElementById('panel-columns').style.display = tab === 'columns' ? '' : 'none';
+  document.getElementById('panel-letters').style.display = tab === 'letters' ? '' : 'none';
   document.getElementById('preview-pane').style.display     = tab === 'age'     ? '' : 'none';
   document.getElementById('preview-columns').style.display  = tab === 'columns' ? '' : 'none';
+  document.getElementById('preview-letters').style.display  = tab === 'letters' ? '' : 'none';
   if (tab === 'columns') requestAnimationFrame(updateColumnSignScale);
+  if (tab === 'letters') renderLetters();
 }
 
 // Render a single Hebrew letter into an SVG element as a pure vector path.
@@ -897,12 +1013,15 @@ async function saveColumnPDF() {
 
 function handlePDF() {
   if (activeTab === 'age') savePDF();
-  else saveColumnPDF();
+  else if (activeTab === 'columns') saveColumnPDF();
+  else if (activeTab === 'letters') saveLettersPDF();
 }
 
 async function handlePrint() {
   if (activeTab === 'columns') {
     await printColumnViaPDF();
+  } else if (activeTab === 'letters') {
+    await printLettersExpanded();
   } else {
     const s = document.createElement('style');
     s.textContent = '@page { size: A4 portrait; margin: 10mm; }';
@@ -910,6 +1029,23 @@ async function handlePrint() {
     window.print();
     s.remove();
   }
+}
+
+async function printLettersExpanded() {
+  const pages = await paginateLetters();
+  if (!pages.length) { alert('אין אותיות להדפסה'); return; }
+  const pane = document.getElementById('preview-letters');
+  const prevHTML = pane.innerHTML;
+  pane.innerHTML = pages.map(pageChars =>
+    `<div class="a4-page">${pageChars.map(buildLetterCardHTML).join('\n')}</div>`
+  ).join('\n');
+  await new Promise(r => requestAnimationFrame(r));
+  const s = document.createElement('style');
+  s.textContent = '@page { size: A4 portrait; margin: 10mm; }';
+  document.head.appendChild(s);
+  window.print();
+  s.remove();
+  pane.innerHTML = prevHTML;
 }
 
 async function printColumnViaPDF() {
@@ -1107,6 +1243,175 @@ function render() {
       `<div class="a4-page">${pageCards.map(buildCardHTML).join('\n')}</div>`
     ).join('\n');
   });
+}
+
+// ===== SHELF LETTERS =====
+function addLetterCards() {
+  const ch  = document.getElementById('inp-letter').value.trim();
+  const qty = parseInt(document.getElementById('inp-letter-qty').value) || 1;
+  if (!ch) { alert('הכנס תו'); return; }
+  letterCards.push({ char: ch, qty });
+  document.getElementById('inp-letter').value = '';
+  document.getElementById('inp-letter-qty').value = '1';
+  document.getElementById('inp-letter').focus();
+  renderLetters();
+}
+
+function removeLetter(idx) {
+  letterCards.splice(idx, 1);
+  renderLetters();
+}
+
+function clearLetters() {
+  if (letterCards.length === 0 || confirm('למחוק את כל האותיות?')) {
+    letterCards = [];
+    renderLetters();
+  }
+}
+
+function buildLetterCardHTML(ch) {
+  return `<div class="letter-card">
+  <div class="fold"></div>
+  <div class="text-zone">${escHtml(ch)}</div>
+  <div class="fold"></div>
+</div>`;
+}
+
+function expandLetterCards() {
+  // Expand all entries to individual cards
+  const all = [];
+  for (const entry of letterCards) {
+    for (let i = 0; i < entry.qty; i++) {
+      all.push(entry.char);
+    }
+  }
+  return all;
+}
+
+async function paginateLetters() {
+  const PAGE_H_MM = 277;
+  const MM_PX = 96 / 25.4;
+  const pageHpx = PAGE_H_MM * MM_PX;
+
+  const all = expandLetterCards();
+  if (!all.length) return [];
+
+  const temp = document.createElement('div');
+  Object.assign(temp.style, {
+    position: 'fixed', visibility: 'hidden', top: '0', left: '0',
+    width: '190mm', display: 'flex', flexWrap: 'wrap',
+    columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
+  });
+  temp.innerHTML = all.map(buildLetterCardHTML).join('');
+  document.body.appendChild(temp);
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  const els = [...temp.querySelectorAll('.letter-card')];
+  const pages = [[]];
+  els.forEach((el, i) => {
+    const pageIdx = pages.length - 1;
+    const relBottom = el.offsetTop + el.offsetHeight - pageIdx * pageHpx;
+    if (relBottom > pageHpx && pages[pageIdx].length > 0) {
+      pages.push([all[i]]);
+    } else {
+      pages[pageIdx].push(all[i]);
+    }
+  });
+
+  document.body.removeChild(temp);
+  return pages;
+}
+
+function renderLetters() {
+  const total = letterCards.reduce((s, e) => s + e.qty, 0);
+  document.getElementById('letter-count').textContent = total;
+
+  // Sidebar list
+  const list = document.getElementById('letter-list');
+  if (!letterCards.length) {
+    list.innerHTML = '<div class="empty-hint">עדיין אין אותיות.<br/>הוסף למעלה.</div>';
+  } else {
+    list.innerHTML = letterCards.map((e, i) => {
+      return `<div class="card-list-item">
+        <span class="card-list-dot" style="background:#2956AA"></span>
+        <span class="card-list-text">
+          <span class="card-list-series">${escHtml(e.char)}</span>
+          <span class="card-list-author"> × ${e.qty}</span>
+        </span>
+        <button class="btn-del" title="מחק" onclick="removeLetter(${i})">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  // Preview
+  const pane = document.getElementById('preview-letters');
+  if (!letterCards.length) {
+    pane.innerHTML = '<div style="color:#ddd;font-size:1.2rem;margin-top:80px;text-align:center;">הוסף אותיות כדי לראות תצוגה מקדימה</div>';
+    return;
+  }
+
+  // Screen preview: show stacks
+  const stacks = letterCards.map(e => {
+    const shadowCount = Math.min(e.qty - 1, 3);
+    let shadows = '';
+    for (let s = shadowCount; s > 0; s--) {
+      shadows += `<div class="stack-shadow" style="top:${s * 2}px;left:${s * 2}px;z-index:${-s};"></div>`;
+    }
+    const badge = e.qty > 1 ? `<div class="stack-badge">${e.qty}</div>` : '';
+    return `<div class="letter-stack">
+      ${shadows}
+      ${badge}
+      ${buildLetterCardHTML(e.char)}
+    </div>`;
+  }).join('');
+  pane.innerHTML = `<div class="a4-page" style="display:flex;flex-wrap:wrap;align-content:start;gap:2mm;padding:10mm;">${stacks}</div>`;
+}
+
+async function saveLettersPDF() {
+  const all = expandLetterCards();
+  if (!all.length) { alert('אין אותיות להורדה'); return; }
+
+  const btn = document.getElementById('btn-pdf');
+  btn.textContent = '⏳ מכין...';
+  btn.disabled = true;
+
+  try {
+    // Render pages for capture
+    const pages = await paginateLetters();
+    const pane = document.getElementById('preview-letters');
+    const prevHTML = pane.innerHTML;
+    pane.innerHTML = pages.map(pageChars =>
+      `<div class="a4-page">${pageChars.map(buildLetterCardHTML).join('\n')}</div>`
+    ).join('\n');
+
+    await document.fonts.ready;
+    await new Promise(r => requestAnimationFrame(r));
+
+    const pageEls = pane.querySelectorAll('.a4-page');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const A4_W = 210, A4_H = 297;
+
+    for (let i = 0; i < pageEls.length; i++) {
+      const canvas = await html2canvas(pageEls[i], {
+        scale: 3, useCORS: true, allowTaint: true,
+        backgroundColor: '#ffffff', logging: false,
+      });
+      if (i > 0) pdf.addPage();
+      const imgData = canvas.toDataURL('image/png');
+      const imgH = (canvas.height / canvas.width) * A4_W;
+      pdf.addImage(imgData, 'PNG', 0, 0, A4_W, Math.min(imgH, A4_H));
+    }
+
+    pdf.save('אותיות-מדף.pdf');
+    // Restore stack preview
+    pane.innerHTML = prevHTML;
+  } catch (e) {
+    alert('שגיאה ביצירת PDF: ' + e.message);
+  } finally {
+    btn.textContent = '📄 שמור PDF';
+    btn.disabled = false;
+  }
 }
 
 // ===== CSV TEMPLATE =====
