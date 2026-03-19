@@ -325,6 +325,10 @@ html, body {
     transition: box-shadow .3s, transform .3s;
     animation: fadeScaleIn .4s ease both;
   }
+  .a4-page.a4-landscape {
+    width: 297mm;
+    min-height: 210mm;
+  }
   .a4-page:hover {
     box-shadow: 0 8px 32px rgba(0,0,0,.35);
     transform: translateY(-2px);
@@ -1128,7 +1132,7 @@ async function handlePrint() {
     await printLettersExpanded();
   } else {
     const s = document.createElement('style');
-    s.textContent = '@page { size: A4 portrait; margin: 10mm; }';
+    s.textContent = '@page { size: A4 landscape; margin: 10mm; }';
     document.head.appendChild(s);
     window.print();
     s.remove();
@@ -1264,14 +1268,14 @@ function splitCSVLine(line) {
 // ===== PAGINATION =====
 // Measures actual rendered card positions to split into A4 pages
 async function paginateCards() {
-  const PAGE_H_MM = 277; // A4 297mm - 10mm top padding - 10mm bottom padding
+  const PAGE_H_MM = 190; // A4 landscape: 210mm - 10mm top - 10mm bottom
   const MM_PX = 96 / 25.4;
   const pageHpx = PAGE_H_MM * MM_PX;
 
   const temp = document.createElement('div');
   Object.assign(temp.style, {
     position: 'fixed', visibility: 'hidden', top: '0', left: '0',
-    width: '190mm', display: 'flex', flexWrap: 'wrap',
+    width: '277mm', display: 'flex', flexWrap: 'wrap',
     columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
   });
   temp.innerHTML = cards.map(buildCardHTML).join('');
@@ -1345,7 +1349,7 @@ function render() {
   paginateCards().then(pages => {
     let idx = 0;
     pane.innerHTML = pages.map(pageCards =>
-      `<div class="a4-page">${pageCards.map(c => buildCardHTML(Object.assign({}, c, { _i: idx++ }))).join('\n')}</div>`
+      `<div class="a4-page a4-landscape">${pageCards.map(c => buildCardHTML(Object.assign({}, c, { _i: idx++ }))).join('\n')}</div>`
     ).join('\n');
   });
 }
@@ -1549,8 +1553,8 @@ async function savePDF() {
     await document.fonts.ready;
     await new Promise(r => requestAnimationFrame(r));
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const A4_W = 210, A4_H = 297;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const A4_W = 297, A4_H = 210;
 
     for (let i = 0; i < pages.length; i++) {
       const canvas = await html2canvas(pages[i], {
