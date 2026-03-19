@@ -313,6 +313,52 @@ html, body {
 .sign-card .separator   { font-weight: 400; opacity: .6; margin: 0 .15em; }
 .sign-card .author-name { font-weight: 400; }
 
+/* ===== TASA ===== */
+.tasa-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.tasa-opt {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: box-shadow .15s;
+  padding: 0;
+}
+.tasa-opt[data-tasa=""] {
+  background: #f0f0f0;
+  color: #888;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tasa-opt.active {
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent);
+  border-color: transparent;
+}
+.sign-card .tasa-strip {
+  width: 10mm;
+  flex-shrink: 0;
+  align-self: stretch;
+  border-inline-end: 0.5px dashed #799DDE;
+}
+.sign-card .text-zone.tasa { padding: 0; }
+.sign-card .text-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5mm;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 
 /* ===== PRINT STYLES ===== */
 @media print {
@@ -400,6 +446,22 @@ html, body {
             <option value="rtl">עברית ← (ימין לשמאל)</option>
             <option value="ltr">English → (Left to Right)</option>
           </select>
+        </div>
+        <div class="form-group">
+          <label>טסה</label>
+          <div class="tasa-picker" id="tasa-picker">
+            <button class="tasa-opt active" data-tasa="" title="ללא טסה" onclick="setTasa(this)">✕</button>
+            <button class="tasa-opt" data-tasa="#7B3F00" style="background:#7B3F00" title="חום" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#E91E8C" style="background:#E91E8C" title="ורוד" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#7B2FBE" style="background:#7B2FBE" title="סגול" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#FFFFFF" style="background:#FFFFFF" title="לבן" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#1565C0" style="background:#1565C0" title="כחול" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#E65100" style="background:#E65100" title="כתום" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#C62828" style="background:#C62828" title="אדום" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#2E7D32" style="background:#2E7D32" title="ירוק" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#F9A825" style="background:#F9A825" title="צהוב" onclick="setTasa(this)"></button>
+            <button class="tasa-opt" data-tasa="#212121" style="background:#212121" title="שחור" onclick="setTasa(this)"></button>
+          </div>
         </div>
         <button class="btn btn-primary" id="btn-submit" onclick="submitForm()">+ הוסף כרטיס</button>
         <button class="btn btn-secondary" id="btn-cancel" style="display:none;margin-top:6px;" onclick="cancelEdit()">ביטול</button>
@@ -551,20 +613,27 @@ let activeTab = 'age'; // 'age' | 'columns'
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
+function setTasa(btn) {
+  document.querySelectorAll('.tasa-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function getSelectedTasa() {
+  return document.querySelector('.tasa-opt.active')?.dataset.tasa || '';
+}
 
 // ===== ADD / EDIT / REMOVE =====
 function submitForm() {
   const series = document.getElementById('inp-series').value.trim();
   const author = document.getElementById('inp-author').value.trim();
   const dir    = document.getElementById('inp-dir').value;
+  const tasa   = getSelectedTasa();
   if (!series) { document.getElementById('inp-series').focus(); return; }
 
   if (editingIdx >= 0) {
-    cards[editingIdx] = { series, author, dir };
+    cards[editingIdx] = { series, author, dir, tasa };
     cancelEdit();
   } else {
-    cards.push({ series, author, dir });
+    cards.push({ series, author, dir, tasa });
     document.getElementById('inp-series').value = '';
     document.getElementById('inp-author').value = '';
     document.getElementById('inp-series').focus();
@@ -573,8 +642,8 @@ function submitForm() {
 }
 
 function addCard(series, author, _category, dir) {
-  // kept for CSV import path (_category ignored)
-  cards.push({ series, author, dir: dir || 'rtl' });
+  // kept for CSV import path (_category ignored, tasa defaults to none)
+  cards.push({ series, author, dir: dir || 'rtl', tasa: '' });
   render();
 }
 
@@ -584,6 +653,10 @@ function editCard(idx) {
   document.getElementById('inp-series').value = c.series;
   document.getElementById('inp-author').value  = c.author || '';
   document.getElementById('inp-dir').value     = c.dir || 'rtl';
+  const tasaColor = c.tasa || '';
+  document.querySelectorAll('.tasa-opt').forEach(b =>
+    b.classList.toggle('active', b.dataset.tasa === tasaColor)
+  );
   document.getElementById('form-title').textContent  = 'ערוך כרטיס';
   document.getElementById('btn-submit').textContent  = '✔ שמור שינויים';
   document.getElementById('btn-cancel').style.display = '';
@@ -595,6 +668,9 @@ function cancelEdit() {
   editingIdx = -1;
   document.getElementById('inp-series').value = '';
   document.getElementById('inp-author').value  = '';
+  document.querySelectorAll('.tasa-opt').forEach(b =>
+    b.classList.toggle('active', b.dataset.tasa === '')
+  );
   document.getElementById('form-title').textContent  = 'הוסף כרטיס';
   document.getElementById('btn-submit').textContent  = '+ הוסף כרטיס';
   document.getElementById('btn-cancel').style.display = 'none';
@@ -795,12 +871,15 @@ async function paginateCards() {
 
 // ===== RENDER =====
 function buildCardHTML(card) {
-  const dir = card.dir || 'rtl';
+  const dir  = card.dir  || 'rtl';
+  const tasa = card.tasa || '';
+  const textSpans = `<span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>`;
+  const textZoneInner = tasa
+    ? `<div class="tasa-strip" style="background:${tasa}"></div><div class="text-content">${textSpans}</div>`
+    : textSpans;
   return `<div class="sign-card" style="direction:${dir};">
   <div class="fold"></div>
-  <div class="text-zone">
-    <span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>
-  </div>
+  <div class="text-zone${tasa ? ' tasa' : ''}">${textZoneInner}</div>
   <div class="fold"></div>
 </div>`;
 }
