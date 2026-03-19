@@ -874,7 +874,9 @@ async function paginateCards() {
 function buildCardHTML(card) {
   const dir  = card.dir  || 'rtl';
   const tasa = card.tasa || '';
-  const textSpans = `<span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>`;
+  const textSpans = card.author
+    ? `<span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author)}</span>`
+    : `<span class="series-name">${escHtml(card.series)}</span>`;
   const textZoneInner = tasa
     ? `<div class="tasa-strip" style="background:${tasa}"></div><div class="text-content">${textSpans}</div>`
     : textSpans;
