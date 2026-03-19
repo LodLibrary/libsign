@@ -448,20 +448,38 @@ html, body {
 
     </div>
 
-    <!-- Panel: column sign form (new) -->
+    <!-- Panel: column sign form -->
     <div id="panel-columns" style="display:none;">
       <div class="section-title">שלט עמודות</div>
+
+      <div class="section-title" style="font-size:.8rem;opacity:.7;margin-top:0;margin-bottom:6px;">↑ עמודה עליונה</div>
       <div class="form-group">
-        <label for="col-range1">טווח אות 1</label>
-        <input id="col-range1" type="text" placeholder="למשל: א–ד" autocomplete="off"/>
+        <label for="col-range1-top">אות ראשונה (ימין)</label>
+        <input id="col-range1-top" type="text" placeholder="א" autocomplete="off" maxlength="1"/>
       </div>
       <div class="form-group">
-        <label for="col-range2">טווח אות 2</label>
-        <input id="col-range2" type="text" placeholder="למשל: ה–ת" autocomplete="off"/>
+        <label for="col-range2-top">אות אחרונה (שמאל)</label>
+        <input id="col-range2-top" type="text" placeholder="ת" autocomplete="off" maxlength="1"/>
       </div>
       <div class="form-group">
-        <label for="col-cat">מחלקה / שם קטגוריה</label>
-        <input id="col-cat" type="text" placeholder="למשל: ספרות" autocomplete="off"/>
+        <label for="col-cat-top">מחלקה</label>
+        <input id="col-cat-top" type="text" placeholder="למשל: ספרות" autocomplete="off"/>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="section-title" style="font-size:.8rem;opacity:.7;margin-top:0;margin-bottom:6px;">↓ עמודה תחתונה</div>
+      <div class="form-group">
+        <label for="col-range1-bot">אות ראשונה (ימין)</label>
+        <input id="col-range1-bot" type="text" placeholder="א" autocomplete="off" maxlength="1"/>
+      </div>
+      <div class="form-group">
+        <label for="col-range2-bot">אות אחרונה (שמאל)</label>
+        <input id="col-range2-bot" type="text" placeholder="ת" autocomplete="off" maxlength="1"/>
+      </div>
+      <div class="form-group">
+        <label for="col-cat-bot">מחלקה</label>
+        <input id="col-cat-bot" type="text" placeholder="למשל: ספרות" autocomplete="off"/>
       </div>
     </div>
 
@@ -494,30 +512,30 @@ html, body {
               <rect x="26.9187" y="26.714" width="1630.16" height="1137.07" stroke="#2956AA" stroke-width="18.31"/>
             </svg>
 
-            <!-- Top dynamic content block -->
-            <div style="position:absolute;left:404.50px;top:109.20px;width:875.22px;display:flex;flex-direction:column;align-items:center;gap:36.42px;">
-              <span class="col-sign-cat" style="align-self:stretch;text-align:center;font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);">קטגוריה</span>
-              <div style="display:inline-flex;align-items:center;gap:63.63px;direction:ltr;">
+            <!-- Top dynamic content block (full-width so align-items:center truly centers) -->
+            <div style="position:absolute;left:0;top:109.20px;width:1684px;display:flex;flex-direction:column;align-items:center;gap:36.42px;">
+              <span id="col-cat-top-el" style="width:875.22px;text-align:center;font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);">מחלקה</span>
+              <div style="display:inline-flex;align-items:flex-start;gap:63.63px;direction:ltr;">
                 <div style="width:187px;height:231px;position:relative;overflow:visible;">
-                  <span class="col-sign-letter2" style="position:absolute;left:-13.26px;top:0;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">ת</span>
+                  <span id="col-l2-top" style="position:absolute;left:-13.26px;top:0;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">ת</span>
                 </div>
-                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;"></div>
+                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;margin-top:111px;"></div>
                 <div style="width:187px;height:231px;position:relative;overflow:visible;">
-                  <span class="col-sign-letter1" style="position:absolute;left:-12.02px;top:0;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">א</span>
+                  <span id="col-l1-top" style="position:absolute;left:-12.02px;top:0;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">א</span>
                 </div>
               </div>
             </div>
 
             <!-- Bottom dynamic content block -->
-            <div style="position:absolute;left:404.50px;top:669.84px;width:875.22px;display:flex;flex-direction:column;align-items:center;gap:36.42px;">
-              <span class="col-sign-cat" style="align-self:stretch;text-align:center;font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);">קטגוריה</span>
-              <div style="display:inline-flex;align-items:center;gap:63.63px;direction:ltr;">
+            <div style="position:absolute;left:0;top:669.84px;width:1684px;display:flex;flex-direction:column;align-items:center;gap:36.42px;">
+              <span id="col-cat-bot-el" style="width:875.22px;text-align:center;font-size:96.83px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);">מחלקה</span>
+              <div style="display:inline-flex;align-items:flex-start;gap:63.63px;direction:ltr;">
                 <div style="width:187px;height:231px;position:relative;overflow:visible;">
-                  <span class="col-sign-letter2" style="position:absolute;left:-13.26px;top:0;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">ת</span>
+                  <span id="col-l2-bot" style="position:absolute;left:-13.26px;top:0;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">ת</span>
                 </div>
-                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;"></div>
+                <div style="width:139.58px;height:9.03px;background:#2956AA;flex-shrink:0;margin-top:111px;"></div>
                 <div style="width:187px;height:231px;position:relative;overflow:visible;">
-                  <span class="col-sign-letter1" style="position:absolute;left:-12.02px;top:0;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">א</span>
+                  <span id="col-l1-bot" style="position:absolute;left:-12.02px;top:0;font-size:330.85px;font-weight:900;line-height:1;color:#2956AA;font-family:var(--font);display:block;">א</span>
                 </div>
               </div>
             </div>
@@ -661,14 +679,18 @@ function switchTab(tab) {
 }
 
 function updateColumnSign() {
-  const r1  = document.getElementById('col-range1').value.trim();
-  const r2  = document.getElementById('col-range2').value.trim();
-  const cat = document.getElementById('col-cat').value.trim() || 'קטגוריה';
-  const l1  = r1.charAt(0) || 'א';
-  const l2  = r2.charAt(0) || 'ת';
-  document.querySelectorAll('.col-sign-cat').forEach(el => { el.textContent = cat; });
-  document.querySelectorAll('.col-sign-letter1').forEach(el => { el.textContent = l1; });
-  document.querySelectorAll('.col-sign-letter2').forEach(el => { el.textContent = l2; });
+  const r1Top  = document.getElementById('col-range1-top').value.trim();
+  const r2Top  = document.getElementById('col-range2-top').value.trim();
+  const catTop = document.getElementById('col-cat-top').value.trim() || 'מחלקה';
+  const r1Bot  = document.getElementById('col-range1-bot').value.trim();
+  const r2Bot  = document.getElementById('col-range2-bot').value.trim();
+  const catBot = document.getElementById('col-cat-bot').value.trim() || 'מחלקה';
+  document.getElementById('col-cat-top-el').textContent = catTop;
+  document.getElementById('col-l1-top').textContent     = r1Top.charAt(0) || 'א';
+  document.getElementById('col-l2-top').textContent     = r2Top.charAt(0) || 'ת';
+  document.getElementById('col-cat-bot-el').textContent = catBot;
+  document.getElementById('col-l1-bot').textContent     = r1Bot.charAt(0) || 'א';
+  document.getElementById('col-l2-bot').textContent     = r2Bot.charAt(0) || 'ת';
 }
 
 function updateColumnSignScale() {
@@ -939,9 +961,8 @@ document.body.dataset.tab = 'age';
 render();
 updateColumnSign();
 
-document.getElementById('col-range1').addEventListener('input', updateColumnSign);
-document.getElementById('col-range2').addEventListener('input', updateColumnSign);
-document.getElementById('col-cat').addEventListener('input', updateColumnSign);
+['col-range1-top','col-range2-top','col-cat-top','col-range1-bot','col-range2-bot','col-cat-bot']
+  .forEach(id => document.getElementById(id).addEventListener('input', updateColumnSign));
 
 const _colPane = document.getElementById('preview-columns');
 if (_colPane && window.ResizeObserver) {
