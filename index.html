@@ -133,6 +133,10 @@ html, body {
 
   .divider { border: none; border-top: 1px solid var(--border); }
 
+  /* URL import */
+  .url-import-row { display: flex; gap: 6px; }
+  .url-import-row input { flex: 1; min-width: 0; }
+
   /* CSV upload */
   .csv-area {
     display: flex;
@@ -470,6 +474,18 @@ html, body {
 
       <hr class="divider"/>
 
+      <!-- URL import from library catalog -->
+      <div class="csv-area">
+        <div class="section-title">ייבוא מקטלוג הספרייה</div>
+        <p class="csv-hint">הדבק קישור מ-lod.library.org.il</p>
+        <div class="url-import-row">
+          <input id="inp-url" type="url" dir="ltr" placeholder="https://lod.library.org.il/..."/>
+          <button id="btn-url-import" class="btn btn-secondary" onclick="importFromLibraryURL()">ייבא</button>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
       <!-- CSV import -->
       <div class="csv-area">
         <div class="section-title">ייבוא CSV</div>
@@ -782,6 +798,68 @@ function handlePrint() {
     s.remove();
   } else {
     window.print();
+  }
+}
+
+// ===== LIBRARY URL IMPORT =====
+async function importFromLibraryURL() {
+  const input = document.getElementById('inp-url');
+  const btn   = document.getElementById('btn-url-import');
+  const url   = input.value.trim();
+  if (!url) return;
+
+  if (!url.includes('lod.library.org.il')) {
+    alert('כרגע נתמך רק קישור מ-lod.library.org.il');
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = 'טוען…';
+
+  try {
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl);
+    if (!response.ok) throw new Error('שגיאת רשת (' + response.status + ')');
+    const data = await response.json();
+    const doc  = new DOMParser().parseFromString(data.contents, 'text/html');
+
+    let series = '', author = '';
+
+    for (const strong of doc.querySelectorAll('strong')) {
+      const label = strong.textContent.trim();
+      const next  = strong.nextElementSibling;
+      if (label === 'סדרה' && next && next.tagName === 'A') {
+        series = next.textContent.trim();
+      }
+      if ((label === 'מחבר' || label === 'מחבר/ת') && next && next.tagName === 'A') {
+        author = next.textContent.trim();
+      }
+    }
+
+    // fallback: search within parent element
+    if (!series) {
+      const el = [...doc.querySelectorAll('strong')].find(s => s.textContent.trim() === 'סדרה');
+      if (el) {
+        const a = el.closest('td,li,div,p') && el.closest('td,li,div,p').querySelector('a');
+        if (a) series = a.textContent.trim();
+      }
+    }
+
+    if (!series) {
+      alert('לא נמצאה סדרה בדף. ייתכן שמדובר בספר שאינו חלק מסדרה.');
+      return;
+    }
+
+    const dir = /[\u0590-\u05FF]/.test(series) ? 'rtl' : 'ltr';
+    cards.push({ series, author, dir, tasa: '' });
+    render();
+    input.value = '';
+
+  } catch (e) {
+    alert('שגיאה בטעינת הדף: ' + (e.message || e));
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'ייבא';
   }
 }
 
