@@ -1206,11 +1206,67 @@ async function handlePrint() {
   } else if (activeTab === 'letters') {
     await printLettersExpanded();
   } else {
-    const s = document.createElement('style');
-    s.textContent = '@page { size: A4 landscape; margin: 10mm; }';
-    document.head.appendChild(s);
-    window.print();
-    s.remove();
+    await printAgeRendered();
+  }
+}
+
+async function printAgeRendered() {
+  const pages = document.querySelectorAll('.a4-page');
+  if (!pages.length) { alert('אין כרטיסים להדפסה'); return; }
+
+  const btn = document.querySelector('.btn-print');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ מרנדר...';
+  btn.disabled = true;
+
+  try {
+    await document.fonts.ready;
+    await new Promise(r => requestAnimationFrame(r));
+
+    const images = [];
+    for (const page of pages) {
+      const canvas = await html2canvas(page, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        onclone: (_doc, el) => {
+          el.querySelectorAll('.sign-card').forEach(card => {
+            card.style.animation = 'none';
+            card.style.opacity   = '1';
+            card.style.transform = 'none';
+          });
+        },
+      });
+      images.push(canvas.toDataURL('image/png'));
+    }
+
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`<!DOCTYPE html><html><head><title>הדפסה</title>
+      <style>
+        @page { size: A4 landscape; margin: 0; }
+        * { margin: 0; padding: 0; }
+        body { background: white; }
+        img { display: block; width: 100vw; height: auto; page-break-after: always; }
+        img:last-child { page-break-after: avoid; }
+      </style></head><body>`);
+    images.forEach(src => printWin.document.write(`<img src="${src}"/>`));
+    printWin.document.write('</body></html>');
+    printWin.document.close();
+
+    // Wait for images to load then print
+    const imgs = printWin.document.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(img =>
+      img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
+    ));
+    printWin.focus();
+    printWin.print();
+  } catch (e) {
+    alert('שגיאה בהכנת ההדפסה: ' + e.message);
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
   }
 }
 
