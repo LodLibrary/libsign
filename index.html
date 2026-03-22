@@ -607,6 +607,7 @@ html, body {
   <div style="display:flex;gap:8px;">
     <button class="btn-print" onclick="handlePrint()">🖨 הדפס</button>
     <button class="btn-print btn-pdf" id="btn-pdf" onclick="handlePDF()">📄 שמור PDF</button>
+    <button class="btn-print" id="btn-csv" onclick="handleCSV()">📋 שמור CSV</button>
   </div>
 </header>
 
@@ -1137,6 +1138,37 @@ async function handlePrint() {
     window.print();
     s.remove();
   }
+}
+
+function handleCSV() {
+  if (activeTab === 'age') {
+    if (!cards.length) { alert('אין כרטיסים לייצוא'); return; }
+    const BOM = '\uFEFF';
+    const header = 'סדרה,מחבר/ת,כיוון,תסה';
+    const rows = cards.map(c => [c.series, c.author, c.dir, c.tasa || ''].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','));
+    const csv = BOM + header + '\n' + rows.join('\n');
+    downloadFile(csv, 'כרטיסי-סדרות.csv', 'text/csv;charset=utf-8');
+  } else if (activeTab === 'letters') {
+    if (!letterCards.length) { alert('אין אותיות לייצוא'); return; }
+    const BOM = '\uFEFF';
+    const header = 'אות,כמות';
+    const rows = letterCards.map(e => '"' + e.char + '",' + e.qty);
+    const csv = BOM + header + '\n' + rows.join('\n');
+    downloadFile(csv, 'אותיות-מדף.csv', 'text/csv;charset=utf-8');
+  } else {
+    alert('ייצוא CSV לא זמין לטאב זה');
+  }
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 async function printLettersExpanded() {
