@@ -1782,12 +1782,11 @@ async function savePDF() {
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
-        onclone: (_doc, el) => {
-          el.querySelectorAll('.sign-card').forEach(card => {
-            card.style.animation = 'none';
-            card.style.opacity   = '1';
-            card.style.transform = 'none';
-          });
+        onclone: (doc) => {
+          // Kill all animations so opacity/transform are at final values
+          const fix = doc.createElement('style');
+          fix.textContent = '*, *::before, *::after { animation: none !important; opacity: 1 !important; transform: none !important; }';
+          doc.head.appendChild(fix);
         },
       });
       if (i > 0) pdf.addPage();
