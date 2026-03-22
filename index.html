@@ -625,11 +625,13 @@ html, body {
         <div class="section-title" id="form-title">הוסף כרטיס</div>
         <div class="form-group">
           <label for="inp-series">שם הסדרה / הספר</label>
-          <input id="inp-series" type="text" placeholder="למשל: הארי פוטר" autocomplete="off"/>
+          <input id="inp-series" type="text" placeholder="למשל: הארי פוטר" list="dl-series" autocomplete="off"/>
+          <datalist id="dl-series"></datalist>
         </div>
         <div class="form-group">
           <label for="inp-author">שם המחבר/ת</label>
-          <input id="inp-author" type="text" placeholder="למשל: ג'יי.קיי. רולינג" autocomplete="off"/>
+          <input id="inp-author" type="text" placeholder="למשל: ג'יי.קיי. רולינג" list="dl-authors" autocomplete="off"/>
+          <datalist id="dl-authors"></datalist>
         </div>
         <div class="form-group">
           <label for="inp-dir">כיוון טקסט</label>
@@ -845,6 +847,24 @@ let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
 let activeTab = 'age'; // 'age' | 'columns' | 'letters'
 let letterCards = []; // { char, qty }
 
+// ===== CATALOG (autocomplete from localStorage) =====
+function loadCatalog(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
+}
+function saveToCatalog(key, value) {
+  if (!value) return;
+  const cat = loadCatalog(key);
+  if (!cat.includes(value)) { cat.push(value); localStorage.setItem(key, JSON.stringify(cat)); }
+  refreshDatalist(key);
+}
+function refreshDatalist(key) {
+  const dlId = key === 'catalog-series' ? 'dl-series' : 'dl-authors';
+  const dl = document.getElementById(dlId);
+  if (!dl) return;
+  dl.innerHTML = loadCatalog(key).sort().map(v => `<option value="${escHtml(v)}">`).join('');
+}
+function initCatalog() { refreshDatalist('catalog-series'); refreshDatalist('catalog-authors'); }
+
 // ===== HELPERS =====
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -865,6 +885,9 @@ function submitForm() {
   const tasa   = getSelectedTasa();
   if (!series) { document.getElementById('inp-series').focus(); return; }
 
+  saveToCatalog('catalog-series', series);
+  saveToCatalog('catalog-authors', author);
+
   if (editingIdx >= 0) {
     cards[editingIdx] = { series, author, dir, tasa };
     cancelEdit();
@@ -879,6 +902,8 @@ function submitForm() {
 
 function addCard(series, author, _category, dir) {
   // kept for CSV import path (_category ignored, tasa defaults to none)
+  saveToCatalog('catalog-series', series);
+  saveToCatalog('catalog-authors', author);
   cards.push({ series, author, dir: dir || 'rtl', tasa: '' });
   render();
 }
@@ -1626,6 +1651,7 @@ document.addEventListener('keydown', e => {
 
 // ===== INIT =====
 document.body.dataset.tab = 'age';
+initCatalog();
 render();
 updateColumnSign();
 
