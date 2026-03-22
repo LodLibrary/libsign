@@ -703,7 +703,7 @@ html, body {
       <!-- CSV import -->
       <div class="csv-area">
         <div class="section-title">ייבוא CSV</div>
-        <p class="csv-hint">עמודות: <code>series,author,tasa</code> (שורת כותרת נדרשת, טסה אופציונלית)</p>
+        <p class="csv-hint">עמודות: <code>series,author,tasa</code> (שורת כותרת נדרשת, טסה: שם צבע בעברית/אנגלית או hex)</p>
         <button class="btn btn-secondary" onclick="downloadCSVTemplate()">⬇ הורד תבנית CSV</button>
         <input type="file" id="csv-file" accept=".csv,text/csv"/>
         <div class="form-group" style="margin-bottom:0;">
@@ -1337,19 +1337,32 @@ function parseCSV(text, dir = 'rtl') {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (!lines.length) return;
 
-  // Detect header
+  // Detect header and column mapping
   const headerLine = lines[0].toLowerCase();
   const hasSeries = headerLine.includes('series') || headerLine.includes('סדרה');
   const startIdx  = hasSeries ? 1 : 0;
+
+  // Determine column indices from header
+  let colSeries = 0, colAuthor = 1, colTasa = 2, colDir = -1;
+  if (hasSeries) {
+    const hCols = splitCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+    hCols.forEach((h, i) => {
+      if (/^(series|סדרה)$/.test(h))          colSeries = i;
+      else if (/^(author|מחבר|מחברת|מחבר\/ת)$/.test(h)) colAuthor = i;
+      else if (/^(tasa|תסה|טסה|טסא)$/.test(h))  colTasa = i;
+      else if (/^(dir|direction|כיוון)$/.test(h)) colDir = i;
+    });
+  }
 
   let added = 0;
   for (let i = startIdx; i < lines.length; i++) {
     const cols = splitCSVLine(lines[i]);
     if (cols.length < 1) continue;
-    const series = (cols[0] || '').trim();
-    const author = (cols[1] || '').trim();
-    const tasa   = parseTasaValue(cols[2]);
-    if (series) { cards.push({ series, author, dir, tasa }); added++; }
+    const series = (cols[colSeries] || '').trim();
+    const author = (cols[colAuthor] || '').trim();
+    const tasa   = parseTasaValue(cols[colTasa]);
+    const rowDir = colDir >= 0 ? ((cols[colDir] || '').trim() || dir) : dir;
+    if (series) { cards.push({ series, author, dir: rowDir, tasa }); added++; }
   }
   render();
   if (added) alert(`יובאו ${added} כרטיסים.`);
