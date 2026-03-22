@@ -172,7 +172,7 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    max-height: 320px;
+    max-height: 50vh;
     overflow-y: auto;
   }
 
@@ -1330,11 +1330,14 @@ async function paginateCards() {
   const MM_PX = 96 / 25.4;
   const pageHpx = PAGE_H_MM * MM_PX;
 
+  await document.fonts.ready;
+
   const temp = document.createElement('div');
   Object.assign(temp.style, {
-    position: 'fixed', visibility: 'hidden', top: '0', left: '0',
+    position: 'absolute', visibility: 'hidden', top: '0', left: '0',
     width: '277mm', display: 'flex', flexWrap: 'wrap',
     columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
+    zIndex: '-9999',
   });
   temp.innerHTML = cards.map(buildCardHTML).join('');
   document.body.appendChild(temp);
@@ -1342,10 +1345,12 @@ async function paginateCards() {
 
   const els = [...temp.querySelectorAll('.sign-card')];
   const pages = [[]];
+  let pageStartY = 0;
   els.forEach((el, i) => {
     const pageIdx = pages.length - 1;
-    const relBottom = el.offsetTop + el.offsetHeight - pageIdx * pageHpx;
-    if (relBottom > pageHpx && pages[pageIdx].length > 0) {
+    const bottom = el.offsetTop + el.offsetHeight;
+    if (bottom - pageStartY > pageHpx && pages[pageIdx].length > 0) {
+      pageStartY = el.offsetTop;
       pages.push([cards[i]]);
     } else {
       pages[pageIdx].push(cards[i]);
@@ -1463,11 +1468,14 @@ async function paginateLetters() {
   const all = expandLetterCards();
   if (!all.length) return [];
 
+  await document.fonts.ready;
+
   const temp = document.createElement('div');
   Object.assign(temp.style, {
-    position: 'fixed', visibility: 'hidden', top: '0', left: '0',
+    position: 'absolute', visibility: 'hidden', top: '0', left: '0',
     width: '190mm', display: 'flex', flexWrap: 'wrap',
     columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
+    zIndex: '-9999',
   });
   temp.innerHTML = all.map(buildLetterCardHTML).join('');
   document.body.appendChild(temp);
@@ -1475,10 +1483,12 @@ async function paginateLetters() {
 
   const els = [...temp.querySelectorAll('.letter-card')];
   const pages = [[]];
+  let pageStartY = 0;
   els.forEach((el, i) => {
     const pageIdx = pages.length - 1;
-    const relBottom = el.offsetTop + el.offsetHeight - pageIdx * pageHpx;
-    if (relBottom > pageHpx && pages[pageIdx].length > 0) {
+    const bottom = el.offsetTop + el.offsetHeight;
+    if (bottom - pageStartY > pageHpx && pages[pageIdx].length > 0) {
+      pageStartY = el.offsetTop;
       pages.push([all[i]]);
     } else {
       pages[pageIdx].push(all[i]);
