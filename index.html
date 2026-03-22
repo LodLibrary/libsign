@@ -1211,7 +1211,7 @@ async function handlePrint() {
 }
 
 async function printAgeRendered() {
-  const pages = document.querySelectorAll('.a4-page');
+  const pages = document.querySelectorAll('#preview-pane .a4-page');
   if (!pages.length) { alert('אין כרטיסים להדפסה'); return; }
 
   const btn = document.querySelector('.btn-print');
@@ -1221,55 +1221,47 @@ async function printAgeRendered() {
 
   try {
     await document.fonts.ready;
-    await new Promise(r => requestAnimationFrame(r));
 
-    // Measure rendered card widths from DOM
-    const allDomCards = document.querySelectorAll('#preview-pane .sign-card');
-    const pxToMm = 25.4 / 96;
+    // Clone each A4 page HTML, stripping animations
+    const pagesHtml = [...pages].map(page => {
+      const clone = page.cloneNode(true);
+      clone.querySelectorAll('.sign-card').forEach(c => {
+        c.style.animation = 'none';
+        c.style.opacity = '1';
+        c.style.transform = 'none';
+      });
+      return `<div class="a4-page a4-landscape">${clone.innerHTML}</div>`;
+    }).join('\n');
 
-    // Build SVG pages
-    let cardIdx = 0;
-    const svgPages = [];
-    for (const page of pages) {
-      const domCards = page.querySelectorAll('.sign-card');
-      const svgs = [];
-      for (const domCard of domCards) {
-        const card = cards[cardIdx++];
-        if (!card) continue;
-        const wMm = domCard.offsetWidth * pxToMm;
-        const hMm = domCard.offsetHeight * pxToMm;
-        svgs.push(buildCardSVG(card, wMm, hMm));
-      }
-      svgPages.push(svgs.join('\n'));
-    }
+    // Extract card-related CSS from the stylesheet
+    const cardCSS = extractCardCSS();
 
     const printWin = window.open('', '_blank');
-    printWin.document.write(`<!DOCTYPE html><html><head><title>הדפסה</title>
-      <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
-      <style>
-        @page { size: A4 landscape; margin: 10mm; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: white; }
-        .page {
-          width: 277mm; height: 190mm;
-          display: flex; flex-wrap: wrap;
-          column-gap: 4mm; row-gap: 6mm;
-          align-content: start;
-          page-break-after: always;
-          overflow: hidden;
-        }
-        .page:last-child { page-break-after: avoid; }
-        svg { flex-shrink: 0; }
-      </style></head><body>`);
-    svgPages.forEach(svgContent => {
-      printWin.document.write(`<div class="page">${svgContent}</div>`);
-    });
-    printWin.document.write('</body></html>');
+    printWin.document.write(`<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 landscape; margin: 10mm; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: white; font-family: 'Assistant', Arial, sans-serif; }
+  ${cardCSS}
+  .a4-page {
+    width: 277mm;
+    display: flex; flex-wrap: wrap; align-content: start;
+    column-gap: 4mm; row-gap: 6mm;
+    page-break-after: always;
+  }
+  .a4-page:last-child { page-break-after: avoid; }
+  .sign-card, .sign-card * {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    animation: none !important;
+  }
+</style></head><body>${pagesHtml}</body></html>`);
     printWin.document.close();
 
-    // Wait for fonts to load in the print window
     await printWin.document.fonts.ready;
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 200));
     printWin.focus();
     printWin.print();
   } catch (e) {
@@ -1280,56 +1272,27 @@ async function printAgeRendered() {
   }
 }
 
-function buildCardSVG(card, wMm, hMm) {
-  const dir  = card.dir || 'rtl';
-  const tasa = card.tasa || '';
-  const FOLD = 7.5;
-  const textZoneH = hMm - 2 * FOLD;
-  const TASA_W = tasa ? 10 : 0;
-  const DASH = '0.8,0.8';
-  const SW = 0.132; // 0.5px in mm
-  const BORDER_CLR = '#799DDE';
-  const TXT_CLR = '#2956AA';
-
-  let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${wMm}mm" height="${hMm}mm" viewBox="0 0 ${wMm} ${hMm}">`;
-
-  // Background
-  s += `<rect width="${wMm}" height="${hMm}" fill="#fff"/>`;
-
-  // Outer dashed border
-  s += `<rect x="${SW/2}" y="${SW/2}" width="${wMm-SW}" height="${hMm-SW}" fill="none" stroke="${BORDER_CLR}" stroke-width="${SW}" stroke-dasharray="${DASH}"/>`;
-
-  // Fold lines
-  s += `<line x1="0" y1="${FOLD}" x2="${wMm}" y2="${FOLD}" stroke="${BORDER_CLR}" stroke-width="${SW}" stroke-dasharray="${DASH}"/>`;
-  s += `<line x1="0" y1="${FOLD+textZoneH}" x2="${wMm}" y2="${FOLD+textZoneH}" stroke="${BORDER_CLR}" stroke-width="${SW}" stroke-dasharray="${DASH}"/>`;
-
-  // Tasa strip
-  if (tasa) {
-    const tasaX = dir === 'rtl' ? wMm - TASA_W : 0;
-    s += `<rect x="${tasaX}" y="${FOLD}" width="${TASA_W}" height="${textZoneH}" fill="${tasa}"/>`;
-    const lineX = dir === 'rtl' ? wMm - TASA_W : TASA_W;
-    s += `<line x1="${lineX}" y1="${FOLD}" x2="${lineX}" y2="${FOLD+textZoneH}" stroke="${BORDER_CLR}" stroke-width="${SW}" stroke-dasharray="${DASH}"/>`;
+function extractCardCSS() {
+  // Pull all CSS rules relevant to sign-card rendering
+  const relevant = [];
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        const sel = rule.selectorText || '';
+        if (sel.includes('.sign-card') || sel.includes('.tasa-strip') ||
+            sel.includes('.text-zone') || sel.includes('.text-content') ||
+            sel.includes('.series-name') || sel.includes('.author-name') ||
+            sel.includes('.separator') || sel.includes('.fold') ||
+            sel.includes('.a4-page') || sel.includes('.a4-landscape')) {
+          // Skip animation/hover/nth-child rules
+          if (sel.includes(':hover') || sel.includes(':active') ||
+              sel.includes(':nth-child') || sel.includes('animation')) continue;
+          relevant.push(rule.cssText);
+        }
+      }
+    } catch { /* cross-origin stylesheet */ }
   }
-
-  // Text position
-  const textAreaStart = tasa ? (dir === 'rtl' ? 0 : TASA_W) : 0;
-  const textAreaW = tasa ? (wMm - TASA_W) : wMm;
-  const textX = textAreaStart + textAreaW / 2;
-  const textY = FOLD + textZoneH / 2;
-  const fsMm = 12.7; // 36pt in mm
-
-  s += `<text x="${textX}" y="${textY}" text-anchor="middle" dominant-baseline="central" font-family="Assistant, sans-serif" font-size="${fsMm}mm" fill="${TXT_CLR}" direction="${dir}">`;
-
-  if (card.author) {
-    s += `<tspan font-weight="600">${escHtml(card.series)}</tspan>`;
-    s += `<tspan font-weight="400" fill-opacity="0.6"> | </tspan>`;
-    s += `<tspan font-weight="400">${escHtml(card.author)}</tspan>`;
-  } else {
-    s += `<tspan font-weight="600">${escHtml(card.series)}</tspan>`;
-  }
-
-  s += `</text></svg>`;
-  return s;
+  return relevant.join('\n');
 }
 
 function handleCSV() {
@@ -1808,51 +1771,29 @@ async function savePDF() {
   try {
     await document.fonts.ready;
     await new Promise(r => requestAnimationFrame(r));
-
-    const pxToMm = 25.4 / 96;
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const A4_W = 297, A4_H = 210;
 
-    // Build SVG pages in a hidden container so we can rasterize them
-    let cardIdx = 0;
-    const svgContainers = [];
-    for (const page of pages) {
-      const domCards = page.querySelectorAll('.sign-card');
-      const container = document.createElement('div');
-      Object.assign(container.style, {
-        position: 'absolute', visibility: 'hidden', top: '0', left: '0',
-        width: '277mm', display: 'flex', flexWrap: 'wrap',
-        columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
-        padding: '10mm', background: 'white', zIndex: '-9999',
-      });
-      for (const domCard of domCards) {
-        const card = cards[cardIdx++];
-        if (!card) continue;
-        const wMm = domCard.offsetWidth * pxToMm;
-        const hMm = domCard.offsetHeight * pxToMm;
-        container.insertAdjacentHTML('beforeend', buildCardSVG(card, wMm, hMm));
-      }
-      document.body.appendChild(container);
-      svgContainers.push(container);
-    }
-
-    await document.fonts.ready;
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    for (let i = 0; i < svgContainers.length; i++) {
-      const canvas = await html2canvas(svgContainers[i], {
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = await html2canvas(pages[i], {
         scale: 3,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
+        onclone: (_doc, el) => {
+          el.querySelectorAll('.sign-card').forEach(card => {
+            card.style.animation = 'none';
+            card.style.opacity   = '1';
+            card.style.transform = 'none';
+          });
+        },
       });
       if (i > 0) pdf.addPage();
       const imgData = canvas.toDataURL('image/png');
       const imgH = (canvas.height / canvas.width) * A4_W;
       pdf.addImage(imgData, 'PNG', 0, 0, A4_W, Math.min(imgH, A4_H));
-      document.body.removeChild(svgContainers[i]);
     }
 
     pdf.save('כרטיסי-ספרייה.pdf');
