@@ -238,6 +238,43 @@ html, body {
     padding: 16px;
   }
 
+  /* Recent sessions */
+  .recent-sessions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 30vh;
+    overflow-y: auto;
+  }
+  .session-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    animation: slideInItem .25s ease both;
+  }
+  .session-item:hover { background: rgba(41,86,170,0.12); transform: translateX(-3px); }
+  .session-item:active { transform: scale(0.98); }
+  .session-name {
+    font-weight: 600;
+    font-size: .85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+  }
+  .session-meta {
+    font-size: .72rem;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
   /* ----- Animations ----- */
   @keyframes slideInItem {
     from { opacity: 0; transform: translateX(14px) scale(0.95); }
@@ -694,6 +731,16 @@ html, body {
         </div>
       </div>
 
+      <hr class="divider"/>
+
+      <!-- Recent sessions -->
+      <div>
+        <div class="section-title">רשומות אחרונות</div>
+        <div class="recent-sessions" id="recent-sessions">
+          <div class="empty-hint">עדיין אין רשומות שמורות.</div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Panel: column sign form -->
@@ -953,6 +1000,7 @@ function removeCard(idx) {
 function clearAll() {
   if (cards.length === 0 || confirm('למחוק את כל הכרטיסים?')) {
     cards = [];
+    currentSessionName = '';
     render();
   }
 }
@@ -1252,7 +1300,10 @@ function importCSV() {
   const reader = new FileReader();
   reader.onload = e => {
     const dir = document.getElementById('csv-dir').value;
+    // Set session name from CSV filename (without extension)
+    currentSessionName = file.name.replace(/\.csv$/i, '');
     parseCSV(e.target.result, dir);
+    saveCurrentSession(currentSessionName);
   };
   reader.readAsText(file, 'utf-8');
 }
@@ -1415,6 +1466,12 @@ function render() {
       `<div class="a4-page a4-landscape">${pageCards.map(c => buildCardHTML(Object.assign({}, c, { _i: idx++ }))).join('\n')}</div>`
     ).join('\n');
   });
+
+  // Auto-save session (debounced)
+  clearTimeout(render._saveTimer);
+  render._saveTimer = setTimeout(() => {
+    if (cards.length) saveCurrentSession();
+  }, 500);
 }
 
 // ===== SHELF LETTERS =====
@@ -1654,6 +1711,84 @@ async function savePDF() {
   }
 }
 
+// ===== RECENT SESSIONS =====
+const SESSIONS_KEY = 'recent-sessions';
+const MAX_SESSIONS = 10;
+let currentSessionName = '';
+
+function loadSessions() {
+  try { return JSON.parse(localStorage.getItem(SESSIONS_KEY)) || []; } catch { return []; }
+}
+
+function saveSessions(sessions) {
+  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+}
+
+function saveCurrentSession(name) {
+  if (!cards.length) return;
+  const sessions = loadSessions();
+  const entry = {
+    name: name || currentSessionName || formatSessionDate(),
+    cards: cards.map(c => ({ series: c.series, author: c.author, dir: c.dir, tasa: c.tasa })),
+    timestamp: Date.now(),
+  };
+  // Replace existing session with same name, or prepend
+  const idx = sessions.findIndex(s => s.name === entry.name);
+  if (idx >= 0) {
+    sessions[idx] = entry;
+  } else {
+    sessions.unshift(entry);
+  }
+  // Keep only the most recent sessions
+  while (sessions.length > MAX_SESSIONS) sessions.pop();
+  saveSessions(sessions);
+  currentSessionName = entry.name;
+  renderSessions();
+}
+
+function formatSessionDate() {
+  const d = new Date();
+  return d.toLocaleDateString('he-IL') + ' ' + d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+}
+
+function loadSession(idx) {
+  const sessions = loadSessions();
+  const session = sessions[idx];
+  if (!session) return;
+  if (cards.length && !confirm('לטעון רשומה זו? הכרטיסים הנוכחיים יוחלפו.')) return;
+  cards = session.cards;
+  currentSessionName = session.name;
+  render();
+}
+
+function deleteSession(idx, ev) {
+  ev.stopPropagation();
+  const sessions = loadSessions();
+  sessions.splice(idx, 1);
+  saveSessions(sessions);
+  renderSessions();
+}
+
+function renderSessions() {
+  const container = document.getElementById('recent-sessions');
+  const sessions = loadSessions();
+  if (!sessions.length) {
+    container.innerHTML = '<div class="empty-hint">עדיין אין רשומות שמורות.</div>';
+    return;
+  }
+  container.innerHTML = sessions.map((s, i) => {
+    const date = new Date(s.timestamp);
+    const timeStr = date.toLocaleDateString('he-IL') + ' ' + date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+    const count = s.cards.length;
+    const isActive = s.name === currentSessionName;
+    return `<div class="session-item${isActive ? ' active' : ''}" onclick="loadSession(${i})" style="animation-delay:${i * 30}ms${isActive ? ';border-right:3px solid var(--accent)' : ''}">
+      <span class="session-name" title="${escHtml(s.name)}">${escHtml(s.name)}</span>
+      <span class="session-meta">${count} כרט׳ · ${timeStr}</span>
+      <button class="btn-del" title="מחק" onclick="deleteSession(${i}, event)">✕</button>
+    </div>`;
+  }).join('');
+}
+
 // ===== KEYBOARD SHORTCUT =====
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') addCard();
@@ -1662,6 +1797,7 @@ document.addEventListener('keydown', e => {
 // ===== INIT =====
 document.body.dataset.tab = 'age';
 initCatalog();
+renderSessions();
 render();
 updateColumnSign();
 
