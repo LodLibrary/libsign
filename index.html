@@ -960,7 +960,8 @@ function renderLetterSVG(svgEl, letter) {
 
   // Use canvas to measure the actual glyph bounding box
   const canvas = document.createElement('canvas');
-  canvas.width = 400; canvas.height = 500;
+  const CW = 600, CH = 600;
+  canvas.width = CW; canvas.height = CH;
   const ctx = canvas.getContext('2d');
   ctx.font = font;
   ctx.textBaseline = 'alphabetic';
@@ -969,15 +970,15 @@ function renderLetterSVG(svgEl, letter) {
   const cacheKey = letter;
   let bounds = _glyphCache[cacheKey];
   if (!bounds) {
-    ctx.clearRect(0, 0, 400, 500);
+    ctx.clearRect(0, 0, CW, CH);
     ctx.fillStyle = '#000';
-    ctx.fillText(letter, 50, 350);
-    const imgData = ctx.getImageData(0, 0, 400, 500);
+    ctx.fillText(letter, 100, 420);
+    const imgData = ctx.getImageData(0, 0, CW, CH);
     const d = imgData.data;
-    let minY = 500, maxY = 0, minX = 400, maxX = 0;
-    for (let y = 0; y < 500; y++) {
-      for (let x = 0; x < 400; x++) {
-        if (d[(y * 400 + x) * 4 + 3] > 20) {
+    let minY = CH, maxY = 0, minX = CW, maxX = 0;
+    for (let y = 0; y < CH; y++) {
+      for (let x = 0; x < CW; x++) {
+        if (d[(y * CW + x) * 4 + 3] > 20) {
           if (y < minY) minY = y;
           if (y > maxY) maxY = y;
           if (x < minX) minX = x;
@@ -985,7 +986,7 @@ function renderLetterSVG(svgEl, letter) {
         }
       }
     }
-    bounds = { minX, minY, maxX, maxY, drawX: 50, drawY: 350 };
+    bounds = { minX, minY, maxX, maxY, drawX: 100, drawY: 420 };
     _glyphCache[cacheKey] = bounds;
   }
 
