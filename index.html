@@ -22,6 +22,18 @@
   --danger: #d63031;
   --text: #1e2029;
   --muted: #6b7280;
+  --trim-width-mm: 210;
+  --trim-height-mm: 297;
+  --safe-margin-mm: 10;
+  --grid-cols: 2;
+  --grid-rows: 4;
+  --grid-gap-mm: 5;
+  --card-height-mm: 65.5;
+  --card-pad-y-mm: 6;
+  --card-pad-x-mm: 8;
+  --label-margin-top-mm: 3;
+  --page-margin-mm: 0;
+  --bleed-mm: 0;
 }
 
 html, body {
@@ -206,16 +218,26 @@ html, body {
   }
 
   .a4-page {
-    width: 210mm;
-    min-height: 297mm;
+    width: calc((var(--trim-width-mm) + (var(--bleed-mm) * 2)) * 1mm);
+    min-height: calc((var(--trim-height-mm) + (var(--bleed-mm) * 2)) * 1mm);
     background: #fff;
-    padding: 10mm;
+    padding: calc((var(--safe-margin-mm) + var(--bleed-mm)) * 1mm);
     box-shadow: 0 4px 24px rgba(0,0,0,.3);
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 60mm;
-    gap: 5mm;
+    grid-template-columns: repeat(var(--grid-cols), 1fr);
+    grid-auto-rows: calc(var(--card-height-mm) * 1mm);
+    gap: calc(var(--grid-gap-mm) * 1mm);
     align-content: start;
+  }
+
+  .print-warning {
+    background: #fff4cf;
+    border: 1px solid #f1d46a;
+    border-radius: 6px;
+    color: #594100;
+    font-size: .8rem;
+    line-height: 1.35;
+    padding: 8px 10px;
   }
 }
 
@@ -226,7 +248,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6mm 8mm;
+  padding: calc(var(--card-pad-y-mm) * 1mm) calc(var(--card-pad-x-mm) * 1mm);
   text-align: center;
   overflow: hidden;
   direction: rtl;
@@ -245,14 +267,12 @@ html, body {
 .sign-card .cat-label {
   font-size: 10pt;
   font-weight: 600;
-  margin-top: 3mm;
+  margin-top: calc(var(--label-margin-top-mm) * 1mm);
   opacity: .72;
 }
 
 /* ===== PRINT STYLES ===== */
 @media print {
-  @page { size: A4 portrait; margin: 10mm; }
-
   .app-header,
   .sidebar,
   .preview-pane > *:not(.a4-page) { display: none !important; }
@@ -268,12 +288,11 @@ html, body {
   }
 
   .a4-page {
-    width: 100%;
+    width: calc((var(--trim-width-mm) + (var(--bleed-mm) * 2)) * 1mm);
     min-height: auto;
     box-shadow: none;
-    padding: 0;
+    padding: calc((var(--safe-margin-mm) + var(--bleed-mm)) * 1mm);
     page-break-after: always;
-    grid-auto-rows: 60mm;
   }
 
   .a4-page:last-child { page-break-after: avoid; }
@@ -285,7 +304,7 @@ html, body {
 <!-- ===== HEADER ===== -->
 <header class="app-header">
   <h1>📚 יצירת כרטיסי גיל — ספרייה</h1>
-  <button class="btn-print" onclick="window.print()">🖨 הדפס / שמור כ-PDF</button>
+  <button class="btn-print" onclick="handlePrint()">🖨 הדפס / שמור כ-PDF</button>
 </header>
 
 <!-- ===== LAYOUT ===== -->
@@ -327,6 +346,25 @@ html, body {
       <p class="csv-hint">עמודות: <code>series,author,category</code> (שורת כותרת נדרשת)</p>
       <input type="file" id="csv-file" accept=".csv,text/csv"/>
       <button class="btn btn-secondary" onclick="importCSV()">ייבא קובץ CSV</button>
+    </div>
+
+    <hr class="divider"/>
+
+    <div>
+      <div class="section-title">הגדרות הדפסה</div>
+      <div class="form-group" style="gap:10px;">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
+          <input id="inp-bleed-toggle" type="checkbox" onchange="toggleBleedMode(this.checked)"/>
+          מצב Bleed מפורש
+        </label>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="inp-bleed-mm">Bleed (מ״מ לכל צד)</label>
+          <input id="inp-bleed-mm" type="number" min="0" max="10" step="0.5" value="0" onchange="setBleedMm(this.value)" disabled/>
+        </div>
+      </div>
+      <div class="print-warning">
+        הדפסה מדפדפן: חובה לבחור <strong>Scale = 100% / Actual size</strong> ולבטל Fit to page.
+      </div>
     </div>
 
     <hr class="divider"/>
@@ -373,9 +411,89 @@ const CATEGORY_LABELS = {
   'מבוגרות/ים': 'מבוגרות/ים (18+)',
 };
 
-const CARDS_PER_PAGE = 8; // 2 cols × 4 rows
+const DEFAULT_LAYOUT = {
+  trim_size_mm: { width: 210, height: 297 },
+  safe_margin_mm: 10,
+  grid: { cols: 2, rows: 4, gap_mm: 5, card_padding_mm: { y: 6, x: 8 } },
+  card: { label_margin_top_mm: 3, main_line_height: 1.3, label_opacity: 0.75 },
+  print: { default_bleed_mm: 0, margin_mm: 0 }
+};
+
+let layoutConfig = structuredClone(DEFAULT_LAYOUT);
+let bleedModeEnabled = false;
+let bleedMm = DEFAULT_LAYOUT.print.default_bleed_mm;
 
 let cards = []; // { series, author, category }
+
+function getCardsPerPage() {
+  return Number(layoutConfig.grid.cols) * Number(layoutConfig.grid.rows);
+}
+
+function setRootVar(name, value) {
+  document.documentElement.style.setProperty(name, String(value));
+}
+
+function calculateCardHeightMm() {
+  const trimH = Number(layoutConfig.trim_size_mm.height);
+  const safe = Number(layoutConfig.safe_margin_mm);
+  const rows = Number(layoutConfig.grid.rows);
+  const gap = Number(layoutConfig.grid.gap_mm);
+  return (trimH - (safe * 2) - ((rows - 1) * gap)) / rows;
+}
+
+function updatePrintStyles() {
+  const trimW = Number(layoutConfig.trim_size_mm.width);
+  const trimH = Number(layoutConfig.trim_size_mm.height);
+  const pageMargin = Number(layoutConfig.print.margin_mm);
+  const activeBleed = bleedModeEnabled ? Number(bleedMm) : 0;
+  const pageW = trimW + (activeBleed * 2);
+  const pageH = trimH + (activeBleed * 2);
+
+  let styleTag = document.getElementById('dynamic-print-style');
+  if (!styleTag) {
+    styleTag = document.createElement('style');
+    styleTag.id = 'dynamic-print-style';
+    document.head.appendChild(styleTag);
+  }
+  styleTag.textContent = `@media print { @page { size: ${pageW}mm ${pageH}mm; margin: ${pageMargin}mm; } }`;
+}
+
+function applyLayoutConfig() {
+  setRootVar('--trim-width-mm', layoutConfig.trim_size_mm.width);
+  setRootVar('--trim-height-mm', layoutConfig.trim_size_mm.height);
+  setRootVar('--safe-margin-mm', layoutConfig.safe_margin_mm);
+  setRootVar('--grid-cols', layoutConfig.grid.cols);
+  setRootVar('--grid-rows', layoutConfig.grid.rows);
+  setRootVar('--grid-gap-mm', layoutConfig.grid.gap_mm);
+  setRootVar('--card-pad-y-mm', layoutConfig.grid.card_padding_mm.y);
+  setRootVar('--card-pad-x-mm', layoutConfig.grid.card_padding_mm.x);
+  setRootVar('--label-margin-top-mm', layoutConfig.card.label_margin_top_mm);
+  setRootVar('--page-margin-mm', layoutConfig.print.margin_mm);
+  setRootVar('--card-height-mm', calculateCardHeightMm().toFixed(3));
+  const activeBleed = bleedModeEnabled ? bleedMm : 0;
+  setRootVar('--bleed-mm', activeBleed);
+  updatePrintStyles();
+}
+
+function toggleBleedMode(enabled) {
+  bleedModeEnabled = Boolean(enabled);
+  document.getElementById('inp-bleed-mm').disabled = !bleedModeEnabled;
+  applyLayoutConfig();
+  render();
+}
+
+function setBleedMm(raw) {
+  const parsed = Number(raw);
+  bleedMm = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  document.getElementById('inp-bleed-mm').value = String(bleedMm);
+  applyLayoutConfig();
+  render();
+}
+
+function handlePrint() {
+  alert('לפני הדפסה: בחרי/בחר Scale = 100% (Actual size) ובטל/י Fit to page.');
+  window.print();
+}
 
 // ===== HELPERS =====
 function escHtml(s) {
@@ -526,7 +644,7 @@ function render() {
     return;
   }
 
-  const pages = chunk(cards, CARDS_PER_PAGE);
+  const pages = chunk(cards, getCardsPerPage());
   pane.innerHTML = pages.map(pageCards =>
     `<div class="a4-page">${pageCards.map(buildCardHTML).join('\n')}</div>`
   ).join('\n');
@@ -537,8 +655,28 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') addCard();
 });
 
+window.addEventListener('beforeprint', () => {
+  console.warn('Print reminder: use Scale 100% / Actual size and disable Fit to page.');
+});
+
 // ===== INIT =====
-render();
+async function initLayoutFromConfig() {
+  try {
+    const res = await fetch('./layout_config.json', { cache: 'no-store' });
+    if (res.ok) {
+      layoutConfig = await res.json();
+    }
+  } catch (e) {
+    console.warn('Could not load layout_config.json, using defaults.', e);
+  }
+
+  bleedMm = Number(layoutConfig.print.default_bleed_mm) || 0;
+  document.getElementById('inp-bleed-mm').value = String(bleedMm || 0);
+  applyLayoutConfig();
+  render();
+}
+
+initLayoutFromConfig();
 </script>
 </body>
 </html>
