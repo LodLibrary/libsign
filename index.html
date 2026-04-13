@@ -236,6 +236,7 @@ html, body {
   font-size: 18pt;
   line-height: 1.35;
   word-break: break-word;
+  min-height: 1.35em;
 }
 
 .sign-card .series-name { font-weight: 700; }
@@ -483,9 +484,12 @@ function splitCSVLine(line) {
 function buildCardHTML(card) {
   const colors = COLORS[card.category] || COLORS['אחר'];
   const label  = CATEGORY_LABELS[card.category] || card.category;
+  const authorPart = card.author
+    ? `<span class="separator"> | </span><span class="author-name">${escHtml(card.author)}</span>`
+    : '';
   return `<div class="sign-card" style="background:${colors.bg};color:${colors.text};">
   <div class="card-main">
-    <span class="series-name">${escHtml(card.series)}</span><span class="separator"> | </span><span class="author-name">${escHtml(card.author || '')}</span>
+    <span class="series-name">${escHtml(card.series)}</span>${authorPart}
   </div>
   <div class="cat-label">${escHtml(label)}</div>
 </div>`;
