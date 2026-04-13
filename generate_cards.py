@@ -300,16 +300,12 @@ def generate_pdf(cards_data, output_path, layout, cols=2, rows=4, bleed_mm=0):
 
     html_content = HTML_TEMPLATE.format(
         font_face=font_face_css(),
-        trim_width=trim_width,
-        trim_height=trim_height,
-        safe_margin=safe_margin,
         page_width=page_width,
         page_height=page_height,
         page_padding=page_padding,
         gap_mm=gap_mm,
         card_pad_y=card_pad_y,
         card_pad_x=card_pad_x,
-        bleed_mm=bleed_mm,
         page_margin=page_margin,
         label_margin_top=label_margin_top,
         main_line_height=main_line_height,
