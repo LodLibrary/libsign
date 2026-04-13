@@ -1,0 +1,26 @@
+{
+  "trim_size_mm": {
+    "width": 210,
+    "height": 297
+  },
+  "safe_margin_mm": 10,
+  "grid": {
+    "cols": 2,
+    "rows": 4,
+    "gap_mm": 5,
+    "card_padding_mm": {
+      "y": 6,
+      "x": 8
+    }
+  },
+  "card": {
+    "border_radius_px": 6,
+    "label_margin_top_mm": 3,
+    "main_line_height": 1.3,
+    "label_opacity": 0.75
+  },
+  "print": {
+    "default_bleed_mm": 0,
+    "margin_mm": 0
+  }
+}

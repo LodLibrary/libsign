@@ -34,6 +34,7 @@ Category values (case-insensitive, also accepts English):
 
 import argparse
 import csv
+import json
 import os
 import sys
 import urllib.request
@@ -84,6 +85,7 @@ DEFAULT_COLORS = {"bg": "#EEEEEE", "text": "#333333"}
 FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
 FONT_VF = os.path.join(FONT_DIR, "Assistant-VF.ttf")
 FONT_URL = "https://github.com/google/fonts/raw/main/ofl/assistant/Assistant%5Bwght%5D.ttf"
+LAYOUT_CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "layout_config.json")
 
 
 def ensure_font():
@@ -140,14 +142,14 @@ HTML_TEMPLATE = """\
 
   /* ---- A4 page shell ---- */
   .page {{
-    width: 210mm;
-    min-height: 297mm;
-    padding: 10mm;
+    width: {page_width}mm;
+    min-height: {page_height}mm;
+    padding: {page_padding}mm;
     page-break-after: always;
     display: grid;
     grid-template-columns: repeat({cols}, 1fr);
     grid-template-rows: repeat({rows}, 1fr);
-    gap: 5mm;
+    gap: {gap_mm}mm;
     align-content: start;
   }}
 
@@ -158,7 +160,7 @@ HTML_TEMPLATE = """\
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 6mm 8mm;
+    padding: {card_pad_y}mm {card_pad_x}mm;
     min-height: {card_height}mm;
     text-align: center;
     overflow: hidden;
@@ -166,7 +168,7 @@ HTML_TEMPLATE = """\
 
   .card-main {{
     font-size: {font_size}pt;
-    line-height: 1.3;
+    line-height: {main_line_height};
     direction: rtl;
     word-break: break-word;
   }}
@@ -187,14 +189,14 @@ HTML_TEMPLATE = """\
   .category-label {{
     font-size: {label_size}pt;
     font-weight: 600;
-    margin-top: 3mm;
-    opacity: 0.75;
+    margin-top: {label_margin_top}mm;
+    opacity: {label_opacity};
   }}
 
   @media print {{
     @page {{
-      size: A4 portrait;
-      margin: 0;
+      size: {page_width}mm {page_height}mm;
+      margin: {page_margin}mm;
     }}
     body {{
       margin: 0;
@@ -254,15 +256,33 @@ def chunk(lst, size):
         yield lst[i:i + size]
 
 
+def load_layout_config():
+    with open(LAYOUT_CONFIG_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
 # ---------------------------------------------------------------------------
 # Main generation logic
 # ---------------------------------------------------------------------------
 
-def generate_pdf(cards_data, output_path, cols=2, rows=4):
+def generate_pdf(cards_data, output_path, layout, cols=2, rows=4, bleed_mm=0):
+    trim_width = layout["trim_size_mm"]["width"]
+    trim_height = layout["trim_size_mm"]["height"]
+    safe_margin = layout["safe_margin_mm"]
+    gap_mm = layout["grid"]["gap_mm"]
+    card_pad_y = layout["grid"]["card_padding_mm"]["y"]
+    card_pad_x = layout["grid"]["card_padding_mm"]["x"]
+    page_margin = layout["print"]["margin_mm"]
+    label_margin_top = layout["card"]["label_margin_top_mm"]
+    main_line_height = layout["card"]["main_line_height"]
+    label_opacity = layout["card"]["label_opacity"]
+    page_width = trim_width + (bleed_mm * 2)
+    page_height = trim_height + (bleed_mm * 2)
+    page_padding = safe_margin + bleed_mm
+
     cards_per_page = cols * rows
-    # A4 usable height = 297 - 20 (top+bottom padding) - gaps
-    # gaps = (rows-1) * 5mm  →  total_gap = 15mm for 4 rows
-    usable_h = 297 - 20 - (rows - 1) * 5
+    # Card geometry is always calculated from the trim size + fixed safe area.
+    usable_h = trim_height - (safe_margin * 2) - (rows - 1) * gap_mm
     card_height = usable_h / rows
 
     # Font size scales with card height (approx)
@@ -280,6 +300,20 @@ def generate_pdf(cards_data, output_path, cols=2, rows=4):
 
     html_content = HTML_TEMPLATE.format(
         font_face=font_face_css(),
+        trim_width=trim_width,
+        trim_height=trim_height,
+        safe_margin=safe_margin,
+        page_width=page_width,
+        page_height=page_height,
+        page_padding=page_padding,
+        gap_mm=gap_mm,
+        card_pad_y=card_pad_y,
+        card_pad_x=card_pad_x,
+        bleed_mm=bleed_mm,
+        page_margin=page_margin,
+        label_margin_top=label_margin_top,
+        main_line_height=main_line_height,
+        label_opacity=label_opacity,
         cols=cols,
         rows=rows,
         card_height=round(card_height, 1),
@@ -328,8 +362,19 @@ def main():
     parser.add_argument("input", nargs="?", help="CSV file (series,author,category)")
     parser.add_argument("--output", "-o", default="cards.pdf", help="Output PDF path (default: cards.pdf)")
     parser.add_argument("--demo", action="store_true", help="Generate a demo PDF with built-in sample data")
-    parser.add_argument("--cols", type=int, default=2, help="Card columns per page (default: 2)")
-    parser.add_argument("--rows", type=int, default=4, help="Card rows per page (default: 4)")
+    layout = load_layout_config()
+    default_cols = layout["grid"]["cols"]
+    default_rows = layout["grid"]["rows"]
+    default_bleed = layout["print"]["default_bleed_mm"]
+
+    parser.add_argument("--cols", type=int, default=default_cols, help=f"Card columns per page (default: {default_cols})")
+    parser.add_argument("--rows", type=int, default=default_rows, help=f"Card rows per page (default: {default_rows})")
+    parser.add_argument(
+        "--bleed-mm",
+        type=float,
+        default=default_bleed,
+        help=f"Bleed size in millimeters on each side (default: {default_bleed})",
+    )
     args = parser.parse_args()
 
     if args.demo:
@@ -345,9 +390,12 @@ def main():
     if not cards:
         print("Error: no card data found.", file=sys.stderr)
         sys.exit(1)
+    if args.bleed_mm < 0:
+        print("Error: --bleed-mm must be non-negative.", file=sys.stderr)
+        sys.exit(1)
 
     ensure_font()
-    generate_pdf(cards, output, cols=args.cols, rows=args.rows)
+    generate_pdf(cards, output, layout=layout, cols=args.cols, rows=args.rows, bleed_mm=args.bleed_mm)
 
 
 if __name__ == "__main__":
