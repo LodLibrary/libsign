@@ -1063,15 +1063,16 @@ function renderLetterSVG(svgEl, letter, uniformGH) {
   const W = 187, H = 231;
   const font = '900 300px Assistant, Arial, sans-serif';
   const color = '#2956AA';
+  const bleed = 6; // extra glyph safety margin to avoid clipping on tight letters
 
   const bounds = measureGlyph(letter);
-  const gw = bounds.maxX - bounds.minX + 1;
-  const gh = bounds.maxY - bounds.minY + 1;
+  const gw = bounds.maxX - bounds.minX + 1 + bleed * 2;
+  const gh = bounds.maxY - bounds.minY + 1 + bleed * 2;
 
   // Scale using the uniform height so all letters are the same size
   const pad = 8;
   const availW = W - pad * 2, availH = H - pad * 2;
-  const refH = uniformGH || gh;
+  const refH = (uniformGH || (gh - bleed * 2)) + bleed * 2;
   const scale = Math.min(availW / gw, availH / refH);
   const sw = gw * scale, sh = gh * scale;
   // Center horizontally, align top uniformly
@@ -1085,8 +1086,8 @@ function renderLetterSVG(svgEl, letter, uniformGH) {
   bctx.font = font;
   bctx.textBaseline = 'alphabetic';
   bctx.fillStyle = color;
-  const tx = ox - (bounds.minX - bounds.drawX) * scale;
-  const ty = oy - (bounds.minY - bounds.drawY) * scale;
+  const tx = ox - ((bounds.minX - bleed) - bounds.drawX) * scale;
+  const ty = oy - ((bounds.minY - bleed) - bounds.drawY) * scale;
   bctx.setTransform(scale, 0, 0, scale, tx, ty);
   bctx.fillText(letter, 0, 0);
 
