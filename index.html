@@ -1116,10 +1116,12 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '')
   const gapPx = subBounds ? 4 : 0;
 
   // Scale using the uniform height so all letters are the same size
-  const pad = 8;
+  const pad = 10;
   const availW = W - pad * 2, availH = H - pad * 2;
   const refH = (uniformGH || (gh - bleed * 2)) + bleed * 2;
-  const scale = availH / refH; // keep text height fixed for all tokens
+  const fitWUnits = gw + (subBounds ? (subGW * subRatio) : 0);
+  const fitW = Math.max(1, availW - gapPx);
+  const scale = Math.min(availH / refH, fitW / fitWUnits);
   const mainSW = gw * scale;
   const subSW = subBounds ? (subGW * scale * subRatio) : 0;
   const sw = mainSW + gapPx + subSW;
@@ -1130,17 +1132,15 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '')
       ? pad
       : (W - sw) / 2;
   const oy = pad + (availH - refH * scale) / 2;
-  const extraLeft = Math.max(0, Math.ceil(-ox));
-  const extraRight = Math.max(0, Math.ceil((ox + sw) - W));
-  const canvasW = W + extraLeft + extraRight;
+  const extraLeft = 0;
   // Draw the glyph onto a canvas at the needed scale
   const bigCanvas = document.createElement('canvas');
-  bigCanvas.width = canvasW; bigCanvas.height = H;
+  bigCanvas.width = W; bigCanvas.height = H;
   const bctx = bigCanvas.getContext('2d');
   bctx.font = font;
   bctx.textBaseline = 'alphabetic';
   bctx.fillStyle = color;
-  const tx = extraLeft + ox - ((bounds.minX - bleed) - bounds.drawX) * scale;
+  const tx = ox - ((bounds.minX - bleed) - bounds.drawX) * scale;
   const ty = oy - ((bounds.minY - bleed) - bounds.drawY) * scale;
   bctx.setTransform(scale, 0, 0, scale, tx, ty);
   bctx.fillText(baseText, 0, 0);
@@ -1149,17 +1149,17 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '')
     const subScale = scale * subRatio;
     const subOx = ox + mainSW + gapPx;
     const subOy = oy + refH * scale * 0.5;
-    const subTx = extraLeft + subOx - ((subBounds.minX - bleed) - subBounds.drawX) * subScale;
+    const subTx = subOx - ((subBounds.minX - bleed) - subBounds.drawX) * subScale;
     const subTy = subOy - ((subBounds.minY - bleed) - subBounds.drawY) * subScale;
     bctx.setTransform(subScale, 0, 0, subScale, subTx, subTy);
     bctx.fillText(smallText, 0, 0);
   }
 
   const dataURL = bigCanvas.toDataURL('image/png');
-  svgEl.style.overflow = 'visible';
-  svgEl.setAttribute('overflow', 'visible');
+  svgEl.style.overflow = 'hidden';
+  svgEl.setAttribute('overflow', 'hidden');
   svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svgEl.innerHTML = `<image href="${dataURL}" x="${-extraLeft}" width="${canvasW}" height="${H}" />`;
+  svgEl.innerHTML = `<image href="${dataURL}" width="${W}" height="${H}" />`;
 }
 
 function updateColumnSign() {
