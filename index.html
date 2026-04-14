@@ -1418,10 +1418,14 @@ async function printColumnViaPDF() {
       #column-sign svg { overflow: visible !important; }
     </style></head><body><div class="sheet">${cloneHTML}</div></body></html>`);
     printWin.document.close();
-    await printWin.document.fonts.ready;
-    await new Promise(r => setTimeout(r, 200));
-    printWin.focus();
-    printWin.print();
+    printWin.onload = () => {
+      printWin.focus();
+      printWin.print();
+    };
+    // safety fallback for browsers that don't fire onload reliably on window.open docs
+    setTimeout(() => {
+      try { printWin.focus(); printWin.print(); } catch {}
+    }, 500);
   } finally {
     btn.textContent = origText;
     btn.disabled = false;
