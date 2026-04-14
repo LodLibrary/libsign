@@ -1400,7 +1400,7 @@ async function printColumnViaPDF() {
   if (!sign) return;
   const btn = document.querySelector('.btn-print');
   const origText = btn.textContent;
-  btn.textContent = '⏳ מכין PNG...';
+  btn.textContent = '⏳ מכין...';
   btn.disabled = true;
   const scaler = document.querySelector('.col-sign-scaler');
   const prevTransform = scaler ? scaler.style.transform : '';
@@ -1418,7 +1418,25 @@ async function printColumnViaPDF() {
       height: 1190
     });
     const pngData = canvas.toDataURL('image/png');
-    downloadFile(pngData, 'שלט-עמודות.png', 'image/png');
+    const win = window.open('');
+    if (win) {
+      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Print</title>
+      <style>
+        @page { size: A4 landscape; margin: 0; }
+        html, body { margin: 0; width: 100%; height: 100%; background: #fff; overflow: hidden; }
+        body { display: flex; align-items: center; justify-content: center; }
+        img { width: 100vw; height: 100vh; object-fit: contain; display: block; }
+      </style></head><body><img src="${pngData}" alt="column-sign"/></body></html>`);
+      win.document.close();
+      win.onload = () => { win.focus(); win.print(); };
+    } else {
+      const a = document.createElement('a');
+      a.href = pngData;
+      a.download = 'שלט-עמודות.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   } finally {
     if (scaler) scaler.style.transform = prevTransform;
     btn.textContent = origText;
