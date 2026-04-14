@@ -765,8 +765,16 @@ html, body {
         <input id="col-range1-top" type="text" placeholder="א / 100" autocomplete="off"/>
       </div>
       <div class="form-group">
+        <label for="col-sub1-top">תת טקסט (אופציונלי)</label>
+        <input id="col-sub1-top" type="text" placeholder=".233 / (9)" autocomplete="off"/>
+      </div>
+      <div class="form-group">
         <label for="col-range2-top">ערך אחרון (שמאל)</label>
         <input id="col-range2-top" type="text" placeholder="ת / 9999" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label for="col-sub2-top">תת טקסט (אופציונלי)</label>
+        <input id="col-sub2-top" type="text" placeholder=".233 / (9)" autocomplete="off"/>
       </div>
       <div class="form-group">
         <label for="col-cat-top">מחלקה</label>
@@ -781,8 +789,16 @@ html, body {
         <input id="col-range1-bot" type="text" placeholder="א / 100" autocomplete="off"/>
       </div>
       <div class="form-group">
+        <label for="col-sub1-bot">תת טקסט (אופציונלי)</label>
+        <input id="col-sub1-bot" type="text" placeholder=".233 / (9)" autocomplete="off"/>
+      </div>
+      <div class="form-group">
         <label for="col-range2-bot">ערך אחרון (שמאל)</label>
         <input id="col-range2-bot" type="text" placeholder="ת / 9999" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label for="col-sub2-bot">תת טקסט (אופציונלי)</label>
+        <input id="col-sub2-bot" type="text" placeholder=".233 / (9)" autocomplete="off"/>
       </div>
       <div class="form-group">
         <label for="col-cat-bot">מחלקה</label>
@@ -1084,32 +1100,36 @@ function measureGlyph(text) {
   return bounds;
 }
 
-function renderLetterSVG(svgEl, text, uniformGH, align = 'center') {
+function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '') {
   const W = 187, H = 231;
   const font = '900 300px Assistant, Arial, sans-serif';
   const color = '#2956AA';
   const bleed = 10; // extra glyph safety margin for all tokens
-  const isSubToken = /^\s*(?:\.\d+|\(\d+\))\s*$/.test(String(text || '').trim());
-
-  const bounds = measureGlyph(text);
+  const subRatio = 0.3;
+  const baseText = String(text || '').trim();
+  const smallText = String(subText || '').trim();
+  const bounds = measureGlyph(baseText || ' ');
+  const subBounds = smallText ? measureGlyph(smallText) : null;
   const gw = bounds.maxX - bounds.minX + 1 + bleed * 2;
   const gh = bounds.maxY - bounds.minY + 1 + bleed * 2;
+  const subGW = subBounds ? (subBounds.maxX - subBounds.minX + 1 + bleed * 2) : 0;
+  const gapPx = subBounds ? 4 : 0;
 
   // Scale using the uniform height so all letters are the same size
   const pad = 8;
   const availW = W - pad * 2, availH = H - pad * 2;
   const refH = (uniformGH || (gh - bleed * 2)) + bleed * 2;
-  let scale = availH / refH; // keep fixed visual size by height (no width downscaling)
-  if (isSubToken) scale *= 0.3; // subscript-like token at ~30%
-  const sw = gw * scale, sh = gh * scale;
+  const scale = availH / refH; // keep fixed visual size by height (no width downscaling)
+  const mainSW = gw * scale;
+  const subSW = subBounds ? (subGW * scale * subRatio) : 0;
+  const sw = mainSW + gapPx + subSW;
   // Keep side alignment (for long numbers/text) while preserving size.
   const ox = align === 'right'
     ? (W - pad - sw)
     : align === 'left'
       ? pad
       : (W - sw) / 2;
-  let oy = pad + (availH - refH * scale) / 2;
-  if (isSubToken) oy = H - pad - refH * scale; // place smaller token lower
+  const oy = pad + (availH - refH * scale) / 2;
   const extraLeft = Math.max(0, Math.ceil(-ox));
   const extraRight = Math.max(0, Math.ceil((ox + sw) - W));
   const canvasW = W + extraLeft + extraRight;
@@ -1124,7 +1144,17 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center') {
   const tx = extraLeft + ox - ((bounds.minX - bleed) - bounds.drawX) * scale;
   const ty = oy - ((bounds.minY - bleed) - bounds.drawY) * scale;
   bctx.setTransform(scale, 0, 0, scale, tx, ty);
-  bctx.fillText(text, 0, 0);
+  bctx.fillText(baseText, 0, 0);
+
+  if (subBounds && smallText) {
+    const subScale = scale * subRatio;
+    const subOx = ox + mainSW + gapPx;
+    const subOy = oy + refH * scale * 0.5;
+    const subTx = extraLeft + subOx - ((subBounds.minX - bleed) - subBounds.drawX) * subScale;
+    const subTy = subOy - ((subBounds.minY - bleed) - subBounds.drawY) * subScale;
+    bctx.setTransform(subScale, 0, 0, subScale, subTx, subTy);
+    bctx.fillText(smallText, 0, 0);
+  }
 
   const dataURL = bigCanvas.toDataURL('image/png');
   svgEl.style.overflow = 'visible';
@@ -1136,9 +1166,13 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center') {
 function updateColumnSign() {
   const r1Top  = document.getElementById('col-range1-top').value.trim().toUpperCase();
   const r2Top  = document.getElementById('col-range2-top').value.trim().toUpperCase();
+  const s1Top  = document.getElementById('col-sub1-top').value.trim();
+  const s2Top  = document.getElementById('col-sub2-top').value.trim();
   const catTop = document.getElementById('col-cat-top').value.trim() || 'מחלקה';
   const r1Bot  = document.getElementById('col-range1-bot').value.trim().toUpperCase();
   const r2Bot  = document.getElementById('col-range2-bot').value.trim().toUpperCase();
+  const s1Bot  = document.getElementById('col-sub1-bot').value.trim();
+  const s2Bot  = document.getElementById('col-sub2-bot').value.trim();
   const catBot = document.getElementById('col-cat-bot').value.trim() || 'מחלקה';
   document.getElementById('col-cat-top-el').textContent = catTop;
   document.getElementById('col-cat-bot-el').textContent = catBot;
@@ -1155,10 +1189,10 @@ function updateColumnSign() {
     return b.maxY - b.minY + 1;
   }));
 
-  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar, maxGH, 'left');
-  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar, maxGH, 'right');
-  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar, maxGH, 'left');
-  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar, maxGH, 'right');
+  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar, maxGH, 'left', s1Top);
+  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar, maxGH, 'right', s2Top);
+  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar, maxGH, 'left', s1Bot);
+  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar, maxGH, 'right', s2Bot);
 
   // Arrow & section visibility
   const arrows = document.getElementById('col-arrows').value;
@@ -1941,7 +1975,7 @@ renderSessions();
 render();
 updateColumnSign();
 
-['col-range1-top','col-range2-top','col-cat-top','col-range1-bot','col-range2-bot','col-cat-bot']
+['col-range1-top','col-sub1-top','col-range2-top','col-sub2-top','col-cat-top','col-range1-bot','col-sub1-bot','col-range2-bot','col-sub2-bot','col-cat-bot']
   .forEach(id => document.getElementById(id).addEventListener('input', updateColumnSign));
 
 const _colPane = document.getElementById('preview-columns');
