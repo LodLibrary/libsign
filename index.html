@@ -1403,88 +1403,10 @@ async function printLettersExpanded() {
 }
 
 async function printColumnViaPDF() {
-  try {
-    const sign = document.getElementById('column-sign');
-    await document.fonts.ready;
-    await new Promise(r => requestAnimationFrame(r));
-
-    // 1) HTML -> SVG (foreignObject)
-    const signHTML = sign.outerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
-    const svgText = `<svg xmlns="http://www.w3.org/2000/svg" width="1684" height="1190" viewBox="0 0 1684 1190">
-      <foreignObject width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="width:1684px;height:1190px;overflow:visible;background:#fff;">${signHTML}</div>
-      </foreignObject>
-    </svg>`;
-
-    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl = URL.createObjectURL(svgBlob);
-
-    // 2) SVG -> PNG
-    const img = new Image();
-    const pngData = await new Promise((resolve, reject) => {
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = 1684;
-          canvas.height = 1190;
-          const ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#fff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          // Auto-trim white margins so PNG fills the PDF page
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const d = imgData.data;
-          let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
-          for (let y = 0; y < canvas.height; y++) {
-            for (let x = 0; x < canvas.width; x++) {
-              const i = (y * canvas.width + x) * 4;
-              const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3];
-              if (a > 0 && (r < 250 || g < 250 || b < 250)) {
-                if (x < minX) minX = x;
-                if (y < minY) minY = y;
-                if (x > maxX) maxX = x;
-                if (y > maxY) maxY = y;
-              }
-            }
-          }
-          if (maxX >= minX && maxY >= minY) {
-            const cw = maxX - minX + 1;
-            const ch = maxY - minY + 1;
-            const cropped = document.createElement('canvas');
-            cropped.width = cw;
-            cropped.height = ch;
-            const cctx = cropped.getContext('2d');
-            cctx.drawImage(canvas, minX, minY, cw, ch, 0, 0, cw, ch);
-            resolve(cropped.toDataURL('image/png'));
-          } else {
-            resolve(canvas.toDataURL('image/png'));
-          }
-        } catch (e) { reject(e); }
-        finally { URL.revokeObjectURL(svgUrl); }
-      };
-      img.onerror = () => { URL.revokeObjectURL(svgUrl); reject(new Error('SVG conversion failed')); };
-      img.src = svgUrl;
-    });
-
-    // 3) Print PNG directly (avoids PDF viewer scaling differences)
-    const win = window.open('');
-    if (win) {
-      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Print</title>
-      <style>
-        @page { size: A4 landscape; margin: 0; }
-        html, body { margin: 0; width: 100vw; height: 100vh; background: #fff; overflow: hidden; }
-        img { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; object-fit: fill; }
-      </style></head><body><img src="${pngData}" alt="column-sign"/></body></html>`);
-      win.document.close();
-      win.onload = () => win.print();
-    } else {
-      downloadFile(pngData, 'שלט-עמודות.png', 'image/png');
-    }
-  } catch (e) {
-    console.error(e);
-    // fallback that always works in browsers even if foreignObject rasterization fails
-    window.print();
-  }
+  await document.fonts.ready;
+  await new Promise(r => requestAnimationFrame(r));
+  // Direct browser print (no PNG/PDF conversion)
+  window.print();
 }
 
 // ===== CSV IMPORT =====
