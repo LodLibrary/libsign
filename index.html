@@ -1162,7 +1162,7 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '')
   const dataURL = bigCanvas.toDataURL('image/png');
   svgEl.style.overflow = 'visible';
   svgEl.setAttribute('overflow', 'visible');
-  svgEl.setAttribute('viewBox', `${-extraLeft} 0 ${canvasW} ${H}`);
+  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svgEl.innerHTML = `<image href="${dataURL}" x="${-extraLeft}" width="${canvasW}" height="${H}" />`;
 }
 
