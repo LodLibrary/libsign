@@ -1089,6 +1089,7 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center') {
   const font = '900 300px Assistant, Arial, sans-serif';
   const color = '#2956AA';
   const bleed = 10; // extra glyph safety margin for all tokens
+  const isSubToken = /^\s*(?:\.\d+|\(\d+\))\s*$/.test(String(text || '').trim());
 
   const bounds = measureGlyph(text);
   const gw = bounds.maxX - bounds.minX + 1 + bleed * 2;
@@ -1098,7 +1099,8 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center') {
   const pad = 8;
   const availW = W - pad * 2, availH = H - pad * 2;
   const refH = (uniformGH || (gh - bleed * 2)) + bleed * 2;
-  const scale = availH / refH; // keep fixed visual size by height (no width downscaling)
+  let scale = availH / refH; // keep fixed visual size by height (no width downscaling)
+  if (isSubToken) scale *= 0.3; // subscript-like token at ~30%
   const sw = gw * scale, sh = gh * scale;
   // Keep side alignment (for long numbers/text) while preserving size.
   const ox = align === 'right'
@@ -1106,7 +1108,8 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center') {
     : align === 'left'
       ? pad
       : (W - sw) / 2;
-  const oy = pad + (availH - refH * scale) / 2;
+  let oy = pad + (availH - refH * scale) / 2;
+  if (isSubToken) oy = H - pad - refH * scale; // place smaller token lower
   const extraLeft = Math.max(0, Math.ceil(-ox));
   const extraRight = Math.max(0, Math.ceil((ox + sw) - W));
   const canvasW = W + extraLeft + extraRight;
