@@ -839,7 +839,7 @@ html, body {
       <div class="col-preview-wrapper">
         <div class="col-sign-scaler">
 
-          <div id="column-sign" style="width:1684px;height:1190px;background:#fff;position:relative;overflow:hidden;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
+          <div id="column-sign" style="width:1684px;height:1190px;background:#fff;position:relative;overflow:visible;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
             <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:url('Pattern.svg') repeat 0 0 / 337px auto;opacity:0.15;pointer-events:none;"></div>
 
             <!-- Static SVG layer: arrows, divider, border (exact paths from design) -->
@@ -1131,10 +1131,10 @@ function updateColumnSign() {
     return b.maxY - b.minY + 1;
   }));
 
-  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar, maxGH, 'right');
-  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar, maxGH, 'left');
-  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar, maxGH, 'right');
-  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar, maxGH, 'left');
+  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar, maxGH, 'left');
+  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar, maxGH, 'right');
+  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar, maxGH, 'left');
+  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar, maxGH, 'right');
 
   // Arrow & section visibility
   const arrows = document.getElementById('col-arrows').value;
