@@ -845,7 +845,7 @@ html, body {
   </aside>
 
   <!-- ===== PREVIEW AREA ===== -->
-  <div style="position:relative;overflow:hidden;display:flex;flex-direction:column;">
+  <div style="position:relative;overflow:visible;display:flex;flex-direction:column;">
 
     <!-- Age cards preview (existing) -->
     <main class="preview-pane" id="preview-pane" style="flex:1;">
@@ -1119,7 +1119,11 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '')
   svgEl.style.overflow = 'visible';
   svgEl.setAttribute('overflow', 'visible');
   svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svgEl.innerHTML = `<text x="${x}" y="${y}" fill="${color}" font-family="Assistant, Arial, sans-serif" font-weight="900" font-size="${fontSize}" text-anchor="${anchor}" dominant-baseline="alphabetic">${safeMain}${safeSub ? `<tspan dx="5" dy="${Math.round(subSize * 0.35)}" font-size="${subSize}" font-weight="900">${safeSub}</tspan>` : ''}</text>`;
+  const mainText = `<text x="${x}" y="${y}" fill="${color}" font-family="Assistant, Arial, sans-serif" font-weight="900" font-size="${fontSize}" text-anchor="${anchor}" dominant-baseline="alphabetic">${safeMain}</text>`;
+  const subTextEl = safeSub
+    ? `<text x="${W - pad}" y="${y + Math.round(subSize * 0.45)}" fill="${color}" font-family="Assistant, Arial, sans-serif" font-weight="900" font-size="${subSize}" text-anchor="end" dominant-baseline="alphabetic">${safeSub}</text>`
+    : '';
+  svgEl.innerHTML = `${mainText}${subTextEl}`;
 }
 
 function updateColumnSign() {
