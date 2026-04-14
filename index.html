@@ -1039,13 +1039,34 @@ function measureGlyph(text) {
   ctx.textBaseline = 'alphabetic';
   ctx.clearRect(0, 0, CW, CH);
   ctx.fillStyle = '#000';
-  ctx.fillText(text, 100, 420);
+  const drawX = 100, drawY = 420;
+  const m = ctx.measureText(text);
+  if (
+    Number.isFinite(m.actualBoundingBoxLeft) &&
+    Number.isFinite(m.actualBoundingBoxRight) &&
+    Number.isFinite(m.actualBoundingBoxAscent) &&
+    Number.isFinite(m.actualBoundingBoxDescent) &&
+    (m.actualBoundingBoxLeft + m.actualBoundingBoxRight) > 0
+  ) {
+    const bounds = {
+      minX: drawX - m.actualBoundingBoxLeft,
+      maxX: drawX + m.actualBoundingBoxRight,
+      minY: drawY - m.actualBoundingBoxAscent,
+      maxY: drawY + m.actualBoundingBoxDescent,
+      drawX,
+      drawY
+    };
+    _glyphCache[cacheKey] = bounds;
+    return bounds;
+  }
+
+  ctx.fillText(text, drawX, drawY);
   const imgData = ctx.getImageData(0, 0, CW, CH);
   const d = imgData.data;
   let minY = CH, maxY = 0, minX = CW, maxX = 0;
   for (let y = 0; y < CH; y++) {
     for (let x = 0; x < CW; x++) {
-      if (d[(y * CW + x) * 4 + 3] > 20) {
+      if (d[(y * CW + x) * 4 + 3] > 0) {
         if (y < minY) minY = y;
         if (y > maxY) maxY = y;
         if (x < minX) minX = x;
@@ -1054,11 +1075,11 @@ function measureGlyph(text) {
     }
   }
   if (maxX < minX || maxY < minY) {
-    const fallback = { minX: 100, minY: 120, maxX: 460, maxY: 420, drawX: 100, drawY: 420 };
+    const fallback = { minX: 100, minY: 120, maxX: 460, maxY: 420, drawX, drawY };
     _glyphCache[cacheKey] = fallback;
     return fallback;
   }
-  const bounds = { minX, minY, maxX, maxY, drawX: 100, drawY: 420 };
+  const bounds = { minX, minY, maxX, maxY, drawX, drawY };
   _glyphCache[cacheKey] = bounds;
   return bounds;
 }
