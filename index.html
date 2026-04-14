@@ -1431,7 +1431,34 @@ async function printColumnViaPDF() {
           ctx.fillStyle = '#fff';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/png'));
+          // Auto-trim white margins so PNG fills the PDF page
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const d = imgData.data;
+          let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
+          for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+              const i = (y * canvas.width + x) * 4;
+              const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3];
+              if (a > 0 && (r < 250 || g < 250 || b < 250)) {
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+              }
+            }
+          }
+          if (maxX >= minX && maxY >= minY) {
+            const cw = maxX - minX + 1;
+            const ch = maxY - minY + 1;
+            const cropped = document.createElement('canvas');
+            cropped.width = cw;
+            cropped.height = ch;
+            const cctx = cropped.getContext('2d');
+            cctx.drawImage(canvas, minX, minY, cw, ch, 0, 0, cw, ch);
+            resolve(cropped.toDataURL('image/png'));
+          } else {
+            resolve(canvas.toDataURL('image/png'));
+          }
         } catch (e) { reject(e); }
         finally { URL.revokeObjectURL(svgUrl); }
       };
