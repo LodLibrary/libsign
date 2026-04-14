@@ -1077,7 +1077,9 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center') {
   const pad = 8;
   const availW = W - pad * 2, availH = H - pad * 2;
   const refH = (uniformGH || (gh - bleed * 2)) + bleed * 2;
-  const scale = availH / refH; // keep a uniform visual size; do not shrink by width
+  const baseScale = availH / refH; // preferred size by height
+  const widthSafeScale = availW / gw; // cap only when needed to avoid side clipping
+  const scale = Math.min(baseScale, widthSafeScale);
   const sw = gw * scale, sh = gh * scale;
   // Keep side alignment (for long numbers/text) while preserving size.
   const ox = align === 'right'
