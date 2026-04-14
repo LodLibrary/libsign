@@ -1102,64 +1102,28 @@ function measureGlyph(text) {
 
 function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '') {
   const W = 187, H = 231;
-  const font = '900 300px Assistant, Arial, sans-serif';
   const color = '#2956AA';
-  const bleed = 10; // extra glyph safety margin for all tokens
   const subRatio = 0.3;
   const baseText = String(text || '').trim();
   const smallText = String(subText || '').trim();
-  const bounds = measureGlyph(baseText || ' ');
-  const subBounds = smallText ? measureGlyph(smallText) : null;
-  const gw = bounds.maxX - bounds.minX + 1 + bleed * 2;
-  const gh = bounds.maxY - bounds.minY + 1 + bleed * 2;
-  const subGW = subBounds ? (subBounds.maxX - subBounds.minX + 1 + bleed * 2) : 0;
-  const gapPx = subBounds ? 4 : 0;
-
-  // Scale using the uniform height so all letters are the same size
   const pad = 8;
-  const availW = W - pad * 2, availH = H - pad * 2;
-  const refH = (uniformGH || (gh - bleed * 2)) + bleed * 2;
-  const scale = availH / refH; // keep text height fixed for all tokens
-  const mainSW = gw * scale;
-  const subSW = subBounds ? (subGW * scale * subRatio) : 0;
-  const sw = mainSW + gapPx + subSW;
-  // Keep side alignment (for long numbers/text) while preserving size.
-  const ox = align === 'right'
-    ? (W - pad - sw)
-    : align === 'left'
-      ? pad
-      : (W - sw) / 2;
-  const oy = pad + (availH - refH * scale) / 2;
-  const extraLeft = Math.max(0, Math.ceil(-ox));
-  const extraRight = Math.max(0, Math.ceil((ox + sw) - W));
-  const canvasW = W + extraLeft + extraRight;
-  // Draw the glyph onto a canvas at the needed scale
-  const bigCanvas = document.createElement('canvas');
-  bigCanvas.width = canvasW; bigCanvas.height = H;
-  const bctx = bigCanvas.getContext('2d');
-  bctx.font = font;
-  bctx.textBaseline = 'alphabetic';
-  bctx.fillStyle = color;
-  const tx = extraLeft + ox - ((bounds.minX - bleed) - bounds.drawX) * scale;
-  const ty = oy - ((bounds.minY - bleed) - bounds.drawY) * scale;
-  bctx.setTransform(scale, 0, 0, scale, tx, ty);
-  bctx.fillText(baseText, 0, 0);
+  const availH = H - pad * 2;
+  const mainBounds = measureGlyph(baseText || 'א');
+  const mainGH = mainBounds.maxY - mainBounds.minY + 1;
+  const refH = uniformGH || mainGH;
+  const fontSize = Math.max(20, 300 * (availH / refH));
 
-  if (subBounds && smallText) {
-    const subScale = scale * subRatio;
-    const subOx = ox + mainSW + gapPx;
-    const subOy = oy + refH * scale * 0.5;
-    const subTx = extraLeft + subOx - ((subBounds.minX - bleed) - subBounds.drawX) * subScale;
-    const subTy = subOy - ((subBounds.minY - bleed) - subBounds.drawY) * subScale;
-    bctx.setTransform(subScale, 0, 0, subScale, subTx, subTy);
-    bctx.fillText(smallText, 0, 0);
-  }
+  const x = align === 'right' ? (W - pad) : align === 'left' ? pad : (W / 2);
+  const anchor = align === 'right' ? 'end' : align === 'left' ? 'start' : 'middle';
+  const y = H * 0.62;
+  const subFontSize = fontSize * subRatio;
+  const safeMain = escHtml(baseText || ' ');
+  const safeSub = escHtml(smallText);
 
-  const dataURL = bigCanvas.toDataURL('image/png');
   svgEl.style.overflow = 'visible';
   svgEl.setAttribute('overflow', 'visible');
   svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svgEl.innerHTML = `<image href="${dataURL}" x="${-extraLeft}" width="${canvasW}" height="${H}" />`;
+  svgEl.innerHTML = `<text x="${x}" y="${y}" fill="${color}" font-family="Assistant, Arial, sans-serif" font-weight="900" font-size="${fontSize}" text-anchor="${anchor}" dominant-baseline="alphabetic">${safeMain}${safeSub ? `<tspan dx="4" dy="${subFontSize * 0.35}" font-size="${subFontSize}">${safeSub}</tspan>` : ''}</text>`;
 }
 
 function updateColumnSign() {
@@ -1188,10 +1152,10 @@ function updateColumnSign() {
     return b.maxY - b.minY + 1;
   }));
 
-  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar, maxGH, 'left', s1Top);
-  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar, maxGH, 'right', s2Top);
-  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar, maxGH, 'left', s1Bot);
-  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar, maxGH, 'right', s2Bot);
+  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar, maxGH, 'right', s1Top);
+  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar, maxGH, 'left', s2Top);
+  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar, maxGH, 'right', s1Bot);
+  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar, maxGH, 'left', s2Bot);
 
   // Arrow & section visibility
   const arrows = document.getElementById('col-arrows').value;
