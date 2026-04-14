@@ -1160,17 +1160,10 @@ function updateColumnSign() {
   const l1BotChar = r1Bot || 'א';
   const l2BotChar = r2Bot || 'ת';
 
-  // Measure all letters and use max glyph height for uniform sizing
-  const allChars = [l1TopChar, l2TopChar, l1BotChar, l2BotChar];
-  const maxGH = Math.max(...allChars.map(ch => {
-    const b = measureGlyph(ch);
-    return b.maxY - b.minY + 1;
-  }));
-
-  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar, maxGH, 'left', s1Top);
-  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar, maxGH, 'right', s2Top);
-  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar, maxGH, 'left', s1Bot);
-  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar, maxGH, 'right', s2Bot);
+  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar, null, 'left', s1Top);
+  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar, null, 'right', s2Top);
+  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar, null, 'left', s1Bot);
+  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar, null, 'right', s2Bot);
 
   // Arrow & section visibility
   const arrows = document.getElementById('col-arrows').value;
