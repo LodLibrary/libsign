@@ -1403,10 +1403,36 @@ async function printLettersExpanded() {
 }
 
 async function printColumnViaPDF() {
-  await document.fonts.ready;
-  await new Promise(r => requestAnimationFrame(r));
-  // Direct browser print (no PNG/PDF conversion)
-  window.print();
+  const sign = document.getElementById('column-sign');
+  if (!sign) return;
+  const btn = document.querySelector('.btn-print');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ מכין...';
+  btn.disabled = true;
+  try {
+    await document.fonts.ready;
+    await new Promise(r => requestAnimationFrame(r));
+    const cloneHTML = sign.outerHTML;
+    const printWin = window.open('', '_blank');
+    if (!printWin) { alert('החלון להדפסה נחסם. אפשרי חלונות קופצים ונסה שוב.'); return; }
+    printWin.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Print</title>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+      @page { size: A4 landscape; margin: 0; }
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #fff; }
+      .sheet { width: 297mm; height: 210mm; position: relative; overflow: hidden; background: #fff; }
+      #column-sign { width: 1684px !important; height: 1190px !important; transform: scale(0.6666667); transform-origin: top left; position: absolute; top: 0; left: 0; overflow: visible !important; }
+      #column-sign svg { overflow: visible !important; }
+    </style></head><body><div class="sheet">${cloneHTML}</div></body></html>`);
+    printWin.document.close();
+    await printWin.document.fonts.ready;
+    await new Promise(r => setTimeout(r, 200));
+    printWin.focus();
+    printWin.print();
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
 }
 
 // ===== CSV IMPORT =====
