@@ -761,12 +761,12 @@ html, body {
 
       <div class="section-title" style="font-size:.8rem;opacity:.7;margin-top:0;margin-bottom:6px;">↑ עמודה עליונה</div>
       <div class="form-group">
-        <label for="col-range1-top">אות ראשונה (ימין)</label>
-        <input id="col-range1-top" type="text" placeholder="א" autocomplete="off" maxlength="1"/>
+        <label for="col-range1-top">ערך ראשון (ימין)</label>
+        <input id="col-range1-top" type="text" placeholder="א / 100" autocomplete="off"/>
       </div>
       <div class="form-group">
-        <label for="col-range2-top">אות אחרונה (שמאל)</label>
-        <input id="col-range2-top" type="text" placeholder="ת" autocomplete="off" maxlength="1"/>
+        <label for="col-range2-top">ערך אחרון (שמאל)</label>
+        <input id="col-range2-top" type="text" placeholder="ת / 9999" autocomplete="off"/>
       </div>
       <div class="form-group">
         <label for="col-cat-top">מחלקה</label>
@@ -777,12 +777,12 @@ html, body {
 
       <div class="section-title" style="font-size:.8rem;opacity:.7;margin-top:0;margin-bottom:6px;">↓ עמודה תחתונה</div>
       <div class="form-group">
-        <label for="col-range1-bot">אות ראשונה (ימין)</label>
-        <input id="col-range1-bot" type="text" placeholder="א" autocomplete="off" maxlength="1"/>
+        <label for="col-range1-bot">ערך ראשון (ימין)</label>
+        <input id="col-range1-bot" type="text" placeholder="א / 100" autocomplete="off"/>
       </div>
       <div class="form-group">
-        <label for="col-range2-bot">אות אחרונה (שמאל)</label>
-        <input id="col-range2-bot" type="text" placeholder="ת" autocomplete="off" maxlength="1"/>
+        <label for="col-range2-bot">ערך אחרון (שמאל)</label>
+        <input id="col-range2-bot" type="text" placeholder="ת / 9999" autocomplete="off"/>
       </div>
       <div class="form-group">
         <label for="col-cat-bot">מחלקה</label>
@@ -1023,14 +1023,13 @@ function switchTab(tab) {
   if (tab === 'letters') renderLetters();
 }
 
-// Render a single Hebrew letter into an SVG element as a pure vector path.
-// Uses an off-screen canvas to extract the glyph outline, then fits it
-// precisely into the SVG viewBox so every letter's top edge aligns uniformly.
+// Render column sign tokens (letters/numbers) into SVG with automatic fit.
+// Uses an off-screen canvas to measure visible pixel bounds precisely.
 const _glyphCache = {};
-function measureGlyph(letter) {
+function measureGlyph(text) {
   const font = '900 300px Assistant, Arial, sans-serif';
   const CW = 600, CH = 600;
-  const cacheKey = letter;
+  const cacheKey = text;
   if (_glyphCache[cacheKey]) return _glyphCache[cacheKey];
 
   const canvas = document.createElement('canvas');
@@ -1040,7 +1039,7 @@ function measureGlyph(letter) {
   ctx.textBaseline = 'alphabetic';
   ctx.clearRect(0, 0, CW, CH);
   ctx.fillStyle = '#000';
-  ctx.fillText(letter, 100, 420);
+  ctx.fillText(text, 100, 420);
   const imgData = ctx.getImageData(0, 0, CW, CH);
   const d = imgData.data;
   let minY = CH, maxY = 0, minX = CW, maxX = 0;
@@ -1054,18 +1053,23 @@ function measureGlyph(letter) {
       }
     }
   }
+  if (maxX < minX || maxY < minY) {
+    const fallback = { minX: 100, minY: 120, maxX: 460, maxY: 420, drawX: 100, drawY: 420 };
+    _glyphCache[cacheKey] = fallback;
+    return fallback;
+  }
   const bounds = { minX, minY, maxX, maxY, drawX: 100, drawY: 420 };
   _glyphCache[cacheKey] = bounds;
   return bounds;
 }
 
-function renderLetterSVG(svgEl, letter, uniformGH) {
+function renderLetterSVG(svgEl, text, uniformGH) {
   const W = 187, H = 231;
   const font = '900 300px Assistant, Arial, sans-serif';
   const color = '#2956AA';
   const bleed = 6; // extra glyph safety margin to avoid clipping on tight letters
 
-  const bounds = measureGlyph(letter);
+  const bounds = measureGlyph(text);
   const gw = bounds.maxX - bounds.minX + 1 + bleed * 2;
   const gh = bounds.maxY - bounds.minY + 1 + bleed * 2;
 
@@ -1089,7 +1093,7 @@ function renderLetterSVG(svgEl, letter, uniformGH) {
   const tx = ox - ((bounds.minX - bleed) - bounds.drawX) * scale;
   const ty = oy - ((bounds.minY - bleed) - bounds.drawY) * scale;
   bctx.setTransform(scale, 0, 0, scale, tx, ty);
-  bctx.fillText(letter, 0, 0);
+  bctx.fillText(text, 0, 0);
 
   const dataURL = bigCanvas.toDataURL('image/png');
   svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -1106,10 +1110,10 @@ function updateColumnSign() {
   document.getElementById('col-cat-top-el').textContent = catTop;
   document.getElementById('col-cat-bot-el').textContent = catBot;
 
-  const l1TopChar = r1Top.charAt(0) || 'א';
-  const l2TopChar = r2Top.charAt(0) || 'ת';
-  const l1BotChar = r1Bot.charAt(0) || 'א';
-  const l2BotChar = r2Bot.charAt(0) || 'ת';
+  const l1TopChar = r1Top || 'א';
+  const l2TopChar = r2Top || 'ת';
+  const l1BotChar = r1Bot || 'א';
+  const l2BotChar = r2Bot || 'ת';
 
   // Measure all letters and use max glyph height for uniform sizing
   const allChars = [l1TopChar, l2TopChar, l1BotChar, l2BotChar];
