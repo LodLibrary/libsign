@@ -1442,7 +1442,8 @@ async function printColumnViaPDF() {
     // 3) PNG -> PDF (A4 landscape full-bleed)
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    pdf.addImage(pngData, 'PNG', 0, 0, 297, 210);
+    // Slight bleed to avoid viewer/printer half-page margins
+    pdf.addImage(pngData, 'PNG', -1, -1, 299, 212);
 
     // 4) Print PDF
     const blob = pdf.output('blob');
