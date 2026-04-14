@@ -1407,6 +1407,10 @@ async function printColumnViaPDF() {
   try {
     if (scaler) scaler.style.transform = 'none';
     await document.fonts.ready;
+    // Re-measure and re-render after fonts are guaranteed loaded
+    Object.keys(_glyphCache).forEach(k => delete _glyphCache[k]);
+    updateColumnSign();
+    await new Promise(r => requestAnimationFrame(r));
     await new Promise(r => requestAnimationFrame(r));
     const canvas = await html2canvas(sign, {
       scale: 2,
