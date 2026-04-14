@@ -628,7 +628,9 @@ html, body {
   }
   body[data-tab="columns"] #column-sign {
     zoom: 0.5;
+    overflow: visible !important;
   }
+  body[data-tab="columns"] #column-sign svg { overflow: visible !important; }
 }
 </style>
 </head>
@@ -1099,71 +1101,25 @@ function measureGlyph(text) {
   _glyphCache[cacheKey] = bounds;
   return bounds;
 }
-const COLUMN_FIXED_REF_H = (() => {
-  const b = measureGlyph('א');
-  return (b.maxY - b.minY + 1) + 20;
-})();
-
 function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '') {
   const W = 187, H = 231;
-  const font = '900 300px Assistant, Arial, sans-serif';
   const color = '#2956AA';
-  const bleed = 10; // extra glyph safety margin for all tokens
   const subRatio = 0.3;
   const baseText = String(text || '').trim();
   const smallText = String(subText || '').trim();
-  const bounds = measureGlyph(baseText || ' ');
-  const subBounds = smallText ? measureGlyph(smallText) : null;
-  const gw = bounds.maxX - bounds.minX + 1 + bleed * 2;
-  const gh = bounds.maxY - bounds.minY + 1 + bleed * 2;
-  const subGW = subBounds ? (subBounds.maxX - subBounds.minX + 1 + bleed * 2) : 0;
-  const gapPx = subBounds ? 4 : 0;
+  const pad = 14;
+  const fontSize = 148;
+  const subSize = Math.round(fontSize * subRatio);
+  const x = align === 'right' ? (W - pad) : align === 'left' ? pad : (W / 2);
+  const anchor = align === 'right' ? 'end' : align === 'left' ? 'start' : 'middle';
+  const y = 170;
+  const safeMain = escHtml(baseText || ' ');
+  const safeSub = escHtml(smallText);
 
-  // Scale using the uniform height so all letters are the same size
-  const pad = 10;
-  const availW = W - pad * 2, availH = H - pad * 2;
-  const refH = COLUMN_FIXED_REF_H;
-  const scale = availH / refH; // fixed text size; never auto-resize by content
-  const mainSW = gw * scale;
-  const subSW = subBounds ? (subGW * scale * subRatio) : 0;
-  const sw = mainSW + gapPx + subSW;
-  // Keep side alignment (for long numbers/text) while preserving size.
-  const ox = align === 'right'
-    ? (W - pad - sw)
-    : align === 'left'
-      ? pad
-      : (W - sw) / 2;
-  const oy = pad + (availH - refH * scale) / 2;
-  const extraLeft = Math.max(0, Math.ceil(-ox));
-  const extraRight = Math.max(0, Math.ceil((ox + sw) - W));
-  const canvasW = W + extraLeft + extraRight;
-  // Draw the glyph onto a canvas at the needed scale
-  const bigCanvas = document.createElement('canvas');
-  bigCanvas.width = canvasW; bigCanvas.height = H;
-  const bctx = bigCanvas.getContext('2d');
-  bctx.font = font;
-  bctx.textBaseline = 'alphabetic';
-  bctx.fillStyle = color;
-  const tx = extraLeft + ox - ((bounds.minX - bleed) - bounds.drawX) * scale;
-  const ty = oy - ((bounds.minY - bleed) - bounds.drawY) * scale;
-  bctx.setTransform(scale, 0, 0, scale, tx, ty);
-  bctx.fillText(baseText, 0, 0);
-
-  if (subBounds && smallText) {
-    const subScale = scale * subRatio;
-    const subOx = ox + mainSW + gapPx;
-    const subOy = oy + refH * scale * 0.5;
-    const subTx = extraLeft + subOx - ((subBounds.minX - bleed) - subBounds.drawX) * subScale;
-    const subTy = subOy - ((subBounds.minY - bleed) - subBounds.drawY) * subScale;
-    bctx.setTransform(subScale, 0, 0, subScale, subTx, subTy);
-    bctx.fillText(smallText, 0, 0);
-  }
-
-  const dataURL = bigCanvas.toDataURL('image/png');
   svgEl.style.overflow = 'visible';
   svgEl.setAttribute('overflow', 'visible');
   svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svgEl.innerHTML = `<image href="${dataURL}" x="${-extraLeft}" width="${canvasW}" height="${H}" />`;
+  svgEl.innerHTML = `<text x="${x}" y="${y}" fill="${color}" font-family="Assistant, Arial, sans-serif" font-weight="900" font-size="${fontSize}" text-anchor="${anchor}" dominant-baseline="alphabetic">${safeMain}${safeSub ? `<tspan dx="5" dy="${Math.round(subSize * 0.35)}" font-size="${subSize}" font-weight="900">${safeSub}</tspan>` : ''}</text>`;
 }
 
 function updateColumnSign() {
