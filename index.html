@@ -1406,26 +1406,53 @@ async function printColumnViaPDF() {
   const sign = document.getElementById('column-sign');
   await document.fonts.ready;
   await new Promise(r => requestAnimationFrame(r));
-  const cloneHTML = sign.outerHTML;
-  const win = window.open('');
-  if (!win) { alert('החלון להדפסה נחסם. אפשרי חלונות קופצים ונסה שוב.'); return; }
-  win.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Print</title>
-  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;900&display=swap" rel="stylesheet">
-  <style>
-    @page { size: A4 landscape; margin: 0; }
-    html, body { margin: 0; width: 100%; height: 100%; background: #fff; }
-    body { display: flex; align-items: center; justify-content: center; }
-    #print-a4 { width: 297mm; height: 210mm; position: relative; overflow: hidden; background: #fff; }
-    #column-sign { width: 1684px !important; height: 1190px !important; overflow: visible !important; transform-origin: top left; position: absolute; top: 0; left: 0; transform: scale(0.6666667); }
-    #column-sign svg { overflow: visible !important; }
-  </style></head>
-  <body><div id="print-a4">${cloneHTML}</div>
-  <script>
-    (function(){
-      window.onload = function(){ window.print(); };
-    })();
-  <\/script></body></html>`);
-  win.document.close();
+
+  // 1) HTML -> SVG (foreignObject)
+  const signHTML = sign.outerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
+  const svgText = `<svg xmlns="http://www.w3.org/2000/svg" width="1684" height="1190" viewBox="0 0 1684 1190">
+    <foreignObject width="100%" height="100%">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="width:1684px;height:1190px;overflow:visible;background:#fff;">${signHTML}</div>
+    </foreignObject>
+  </svg>`;
+
+  const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  // 2) SVG -> PNG
+  const img = new Image();
+  const pngData = await new Promise((resolve, reject) => {
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1684;
+        canvas.height = 1190;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/png'));
+      } catch (e) { reject(e); }
+      finally { URL.revokeObjectURL(svgUrl); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(svgUrl); reject(new Error('SVG conversion failed')); };
+    img.src = svgUrl;
+  });
+
+  // 3) PNG -> PDF (A4 landscape full-bleed)
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  pdf.addImage(pngData, 'PNG', 0, 0, 297, 210);
+
+  // 4) Print PDF
+  const blob = pdf.output('blob');
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url);
+  if (win) {
+    win.addEventListener('afterprint', () => { win.close(); URL.revokeObjectURL(url); });
+    win.onload = () => win.print();
+  } else {
+    pdf.save('שלט-עמודות.pdf');
+  }
 }
 
 // ===== CSV IMPORT =====
