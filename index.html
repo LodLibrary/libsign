@@ -1099,6 +1099,10 @@ function measureGlyph(text) {
   _glyphCache[cacheKey] = bounds;
   return bounds;
 }
+const COLUMN_FIXED_REF_H = (() => {
+  const b = measureGlyph('א');
+  return (b.maxY - b.minY + 1) + 20;
+})();
 
 function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '') {
   const W = 187, H = 231;
@@ -1118,10 +1122,8 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '')
   // Scale using the uniform height so all letters are the same size
   const pad = 10;
   const availW = W - pad * 2, availH = H - pad * 2;
-  const refH = (uniformGH || (gh - bleed * 2)) + bleed * 2;
-  const fitWUnits = gw + (subBounds ? (subGW * subRatio) : 0);
-  const fitW = Math.max(1, availW - gapPx);
-  const scale = Math.min(availH / refH, fitW / fitWUnits);
+  const refH = COLUMN_FIXED_REF_H;
+  const scale = availH / refH; // fixed text size; never auto-resize by content
   const mainSW = gw * scale;
   const subSW = subBounds ? (subGW * scale * subRatio) : 0;
   const sw = mainSW + gapPx + subSW;
