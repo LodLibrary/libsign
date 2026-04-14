@@ -1406,38 +1406,19 @@ async function printColumnViaPDF() {
   const sign = document.getElementById('column-sign');
   await document.fonts.ready;
   await new Promise(r => requestAnimationFrame(r));
-
-  // Capture a padded "screenshot" area so overflowed token text isn't clipped.
-  const shotWrap = document.createElement('div');
-  shotWrap.style.position = 'fixed';
-  shotWrap.style.left = '-100000px';
-  shotWrap.style.top = '0';
-  shotWrap.style.padding = '240px';
-  shotWrap.style.background = '#fff';
-  shotWrap.style.display = 'inline-block';
-  shotWrap.style.overflow = 'visible';
-
-  const clone = sign.cloneNode(true);
-  clone.style.overflow = 'visible';
-  shotWrap.appendChild(clone);
-  document.body.appendChild(shotWrap);
-
-  const canvas = await html2canvas(shotWrap, {
-    scale: 2, useCORS: true, allowTaint: true,
-    backgroundColor: '#ffffff', logging: false
-  });
-
-  document.body.removeChild(shotWrap);
-
-  const imgData = canvas.toDataURL('image/png');
+  const cloneHTML = sign.outerHTML;
   const win = window.open('');
-  if (!win) {
-    downloadFile(imgData, 'שלט-עמודות.png', 'image/png');
-    return;
-  }
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Print</title>
-  <style>html,body{margin:0;background:#fff;}img{width:100%;height:auto;display:block;}</style></head>
-  <body><img src="${imgData}" alt="column-sign"/></body></html>`);
+  if (!win) { alert('החלון להדפסה נחסם. אפשרי חלונות קופצים ונסה שוב.'); return; }
+  win.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Print</title>
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4 landscape; margin: 0; }
+    html, body { margin: 0; width: 100%; height: 100%; background: #fff; }
+    body { display: flex; align-items: center; justify-content: center; }
+    #column-sign { width: 297mm !important; height: auto !important; overflow: visible !important; }
+    #column-sign svg { overflow: visible !important; }
+  </style></head>
+  <body>${cloneHTML}</body></html>`);
   win.document.close();
   win.onload = () => win.print();
 }
