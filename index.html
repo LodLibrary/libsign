@@ -1389,33 +1389,42 @@ async function printLettersExpanded() {
 
 async function printColumnViaPDF() {
   const sign = document.getElementById('column-sign');
-  const scaler = document.querySelector('.col-sign-scaler');
-  const prev = scaler.style.transform;
-  scaler.style.transform = 'none';
   await document.fonts.ready;
   await new Promise(r => requestAnimationFrame(r));
-  const canvas = await html2canvas(sign, {
+
+  // Capture a padded "screenshot" area so overflowed token text isn't clipped.
+  const shotWrap = document.createElement('div');
+  shotWrap.style.position = 'fixed';
+  shotWrap.style.left = '-100000px';
+  shotWrap.style.top = '0';
+  shotWrap.style.padding = '240px';
+  shotWrap.style.background = '#fff';
+  shotWrap.style.display = 'inline-block';
+  shotWrap.style.overflow = 'visible';
+
+  const clone = sign.cloneNode(true);
+  clone.style.overflow = 'visible';
+  shotWrap.appendChild(clone);
+  document.body.appendChild(shotWrap);
+
+  const canvas = await html2canvas(shotWrap, {
     scale: 2, useCORS: true, allowTaint: true,
-    backgroundColor: '#ffffff', logging: false,
-    width: 1684, height: 1190,
+    backgroundColor: '#ffffff', logging: false
   });
-  scaler.style.transform = prev;
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const W = 297, H = 210;
+
+  document.body.removeChild(shotWrap);
+
   const imgData = canvas.toDataURL('image/png');
-  const imgH = (canvas.height / canvas.width) * W;
-  pdf.addImage(imgData, 'PNG', 0, Math.max(0, (H - imgH) / 2), W, Math.min(imgH, H));
-  const blob = pdf.output('blob');
-  const url = URL.createObjectURL(blob);
-  const win = window.open(url);
-  if (win) {
-    win.addEventListener('afterprint', () => { win.close(); URL.revokeObjectURL(url); });
-    win.onload = () => win.print();
-  } else {
-    // fallback: if popup blocked, download instead
-    pdf.save('שלט-עמודות.pdf');
+  const win = window.open('');
+  if (!win) {
+    downloadFile(imgData, 'שלט-עמודות.png', 'image/png');
+    return;
   }
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Print</title>
+  <style>html,body{margin:0;background:#fff;}img{width:100%;height:auto;display:block;}</style></head>
+  <body><img src="${imgData}" alt="column-sign"/></body></html>`);
+  win.document.close();
+  win.onload = () => win.print();
 }
 
 // ===== CSV IMPORT =====
