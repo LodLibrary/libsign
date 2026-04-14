@@ -1114,17 +1114,29 @@ function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '')
   const x = align === 'right' ? (W - pad) : align === 'left' ? pad : (W / 2);
   const anchor = align === 'right' ? 'end' : align === 'left' ? 'start' : 'middle';
   const y = 170;
-  const frameRightX = W - pad;
   const safeMain = escHtml(baseText || ' ');
   const safeSub = escHtml(smallText);
+  const mainBounds = measureGlyph(baseText || ' ');
+  const mainScale = fontSize / 300;
+  const mainW = (mainBounds.maxX - mainBounds.minX + 1) * mainScale;
+  const mainH = (mainBounds.maxY - mainBounds.minY + 1) * mainScale;
+  const mainLeft = anchor === 'end' ? (x - mainW) : anchor === 'start' ? x : (x - mainW / 2);
+  const frameLeft = mainLeft - bleedPad;
+  const frameTop = y - mainH - bleedPad;
+  const frameRight = mainLeft + mainW + bleedPad;
+  const frameBottom = y + bleedPad;
+  const subGap = 8;
+  const subBounds = smallText ? measureGlyph(smallText) : null;
+  const subW = subBounds ? ((subBounds.maxX - subBounds.minX + 1) * (subSize / 300)) : 0;
+  const subRightX = frameRight + subGap + subW;
 
   svgEl.style.overflow = 'visible';
   svgEl.setAttribute('overflow', 'visible');
   svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  const invisibleFrame = `<rect x="${-bleedPad}" y="${-bleedPad}" width="${W + bleedPad * 2}" height="${H + bleedPad * 2}" fill="none" stroke="transparent"/>`;
+  const invisibleFrame = `<rect x="${frameLeft}" y="${frameTop}" width="${frameRight - frameLeft}" height="${frameBottom - frameTop}" fill="none" stroke="transparent"/>`;
   const mainText = `<text x="${x}" y="${y}" fill="${color}" font-family="Assistant, Arial, sans-serif" font-weight="900" font-size="${fontSize}" text-anchor="${anchor}" dominant-baseline="alphabetic">${safeMain}</text>`;
   const subTextEl = safeSub
-    ? `<text x="${frameRightX}" y="${y + Math.round(subSize * 0.45)}" fill="${color}" font-family="Assistant, Arial, sans-serif" font-weight="900" font-size="${subSize}" text-anchor="end" dominant-baseline="alphabetic">${safeSub}</text>`
+    ? `<text x="${subRightX}" y="${y + Math.round(subSize * 0.45)}" fill="${color}" font-family="Assistant, Arial, sans-serif" font-weight="900" font-size="${subSize}" text-anchor="end" dominant-baseline="alphabetic">${safeSub}</text>`
     : '';
   svgEl.innerHTML = `${invisibleFrame}${mainText}${subTextEl}`;
 }
