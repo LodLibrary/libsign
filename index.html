@@ -1396,70 +1396,23 @@ async function printLettersExpanded() {
 }
 
 async function printColumnViaPDF() {
-  const sign = document.getElementById('column-sign');
-  if (!sign) return;
+  const target = document.querySelector('#preview-columns .col-sign-scaler');
+  if (!target) return;
   const btn = document.querySelector('.btn-print');
   const origText = btn.textContent;
   btn.textContent = '⏳ מכין...';
   btn.disabled = true;
-  const scaler = document.querySelector('.col-sign-scaler');
-  const prevTransform = scaler ? scaler.style.transform : '';
   try {
-    if (scaler) scaler.style.transform = 'none';
     await document.fonts.ready;
-    // Re-measure and re-render after fonts are guaranteed loaded
-    Object.keys(_glyphCache).forEach(k => delete _glyphCache[k]);
-    updateColumnSign();
-    await new Promise(r => requestAnimationFrame(r));
-    await new Promise(r => requestAnimationFrame(r));
-    // Capture with outer padding so overflowed glyphs/subtext are included
-    const shotWrap = document.createElement('div');
-    shotWrap.style.position = 'fixed';
-    shotWrap.style.left = '-100000px';
-    shotWrap.style.top = '0';
-    shotWrap.style.padding = '220px';
-    shotWrap.style.background = '#fff';
-    shotWrap.style.display = 'inline-block';
-    shotWrap.style.overflow = 'visible';
-    const clone = sign.cloneNode(true);
-    clone.style.overflow = 'visible';
-    shotWrap.appendChild(clone);
-    document.body.appendChild(shotWrap);
-
-    const canvas = await html2canvas(shotWrap, {
-      scale: 2,
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const canvas = await html2canvas(target, {
+      scale: 3,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
       logging: false
     });
-    document.body.removeChild(shotWrap);
-
-    // Trim white margins after padded capture
-    const ctx = canvas.getContext('2d');
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
-    for (let y = 0; y < canvas.height; y++) {
-      for (let x = 0; x < canvas.width; x++) {
-        const i = (y * canvas.width + x) * 4;
-        if (imgData[i + 3] > 0 && (imgData[i] < 250 || imgData[i + 1] < 250 || imgData[i + 2] < 250)) {
-          if (x < minX) minX = x;
-          if (y < minY) minY = y;
-          if (x > maxX) maxX = x;
-          if (y > maxY) maxY = y;
-        }
-      }
-    }
-    let pngData;
-    if (maxX >= minX && maxY >= minY) {
-      const cw = maxX - minX + 1, ch = maxY - minY + 1;
-      const cropped = document.createElement('canvas');
-      cropped.width = cw; cropped.height = ch;
-      cropped.getContext('2d').drawImage(canvas, minX, minY, cw, ch, 0, 0, cw, ch);
-      pngData = cropped.toDataURL('image/png');
-    } else {
-      pngData = canvas.toDataURL('image/png');
-    }
+    const pngData = canvas.toDataURL('image/png');
     const win = window.open('');
     if (win) {
       win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Print</title>
@@ -1480,7 +1433,6 @@ async function printColumnViaPDF() {
       a.remove();
     }
   } finally {
-    if (scaler) scaler.style.transform = prevTransform;
     btn.textContent = origText;
     btn.disabled = false;
   }
