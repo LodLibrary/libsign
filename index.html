@@ -1407,7 +1407,9 @@ async function printColumnViaPDF() {
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     const baseStyle = document.querySelector('style')?.textContent || '';
     const patternAbs = new URL('Pattern.svg', window.location.href).href;
-    const cloneHTML = preview.innerHTML.replace(/Pattern\.svg/g, patternAbs);
+    const cloneHTML = preview.innerHTML
+      .replace(/Pattern\.svg/g, patternAbs)
+      .replace(/opacity:\s*0\.15/g, 'opacity:0.30');
     const win = window.open('');
     if (win) {
       win.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Print</title>
