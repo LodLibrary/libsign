@@ -1396,8 +1396,8 @@ async function printLettersExpanded() {
 }
 
 async function printColumnViaPDF() {
-  const target = document.getElementById('column-sign');
-  if (!target) return;
+  const preview = document.getElementById('preview-columns');
+  if (!preview) return;
   const btn = document.querySelector('.btn-print');
   const origText = btn.textContent;
   btn.textContent = '⏳ מכין...';
@@ -1405,69 +1405,24 @@ async function printColumnViaPDF() {
   try {
     await document.fonts.ready;
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    const shotWrap = document.createElement('div');
-    shotWrap.style.position = 'fixed';
-    shotWrap.style.left = '-100000px';
-    shotWrap.style.top = '0';
-    shotWrap.style.padding = '160px';
-    shotWrap.style.background = '#fff';
-    shotWrap.style.display = 'inline-block';
-    shotWrap.style.overflow = 'visible';
-    const clone = target.cloneNode(true);
-    shotWrap.appendChild(clone);
-    document.body.appendChild(shotWrap);
-
-    const canvas = await html2canvas(shotWrap, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false
-    });
-    document.body.removeChild(shotWrap);
-    // Trim white margins introduced by padded capture
-    const ctx = canvas.getContext('2d');
-    const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
-    for (let y = 0; y < canvas.height; y++) {
-      for (let x = 0; x < canvas.width; x++) {
-        const i = (y * canvas.width + x) * 4;
-        if (d[i + 3] > 0 && (d[i] < 250 || d[i + 1] < 250 || d[i + 2] < 250)) {
-          if (x < minX) minX = x;
-          if (y < minY) minY = y;
-          if (x > maxX) maxX = x;
-          if (y > maxY) maxY = y;
-        }
-      }
-    }
-    let pngData;
-    if (maxX >= minX && maxY >= minY) {
-      const cw = maxX - minX + 1, ch = maxY - minY + 1;
-      const cropped = document.createElement('canvas');
-      cropped.width = cw; cropped.height = ch;
-      cropped.getContext('2d').drawImage(canvas, minX, minY, cw, ch, 0, 0, cw, ch);
-      pngData = cropped.toDataURL('image/png');
-    } else {
-      pngData = canvas.toDataURL('image/png');
-    }
+    const baseStyle = document.querySelector('style')?.textContent || '';
+    const cloneHTML = preview.innerHTML;
     const win = window.open('');
     if (win) {
-      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Print</title>
-      <style>
-        @page { size: A4 landscape; margin: 0; }
-        html, body { margin: 0; width: 100%; height: 100%; background: #fff; overflow: hidden; }
-        body { display: flex; align-items: center; justify-content: center; }
-        img { width: 100vw; height: 100vh; object-fit: fill; display: block; }
-      </style></head><body><img src="${pngData}" alt="column-sign"/></body></html>`);
+      win.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Print</title>
+      <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;900&display=swap" rel="stylesheet">
+      <style>${baseStyle}</style>
+      </head><body data-tab="columns">
+      <div class="preview-pane" id="preview-columns" style="display:block;flex:1;">${cloneHTML}</div>
+      </body></html>`);
       win.document.close();
-      win.onload = () => { win.focus(); win.print(); };
+      win.onload = async () => {
+        try { await win.document.fonts.ready; } catch {}
+        win.focus();
+        win.print();
+      };
     } else {
-      const a = document.createElement('a');
-      a.href = pngData;
-      a.download = 'שלט-עמודות.png';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      window.print();
     }
   } finally {
     btn.textContent = origText;
