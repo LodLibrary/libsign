@@ -1388,7 +1388,7 @@ async function printLettersExpanded() {
   ).join('\n');
   await new Promise(r => requestAnimationFrame(r));
   const s = document.createElement('style');
-  s.textContent = '@page { size: A4 portrait; margin: 10mm; }';
+  s.textContent = '@page { size: A4 landscape; margin: 10mm; }';
   document.head.appendChild(s);
   window.print();
   s.remove();
@@ -1780,8 +1780,8 @@ async function saveLettersPDF() {
 
     const pageEls = pane.querySelectorAll('.a4-page');
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const A4_W = 210, A4_H = 297;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const A4_W = 297, A4_H = 210;
 
     for (let i = 0; i < pageEls.length; i++) {
       const canvas = await html2canvas(pageEls[i], {
