@@ -1406,10 +1406,12 @@ async function printColumnViaPDF() {
     await document.fonts.ready;
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     const baseStyle = document.querySelector('style')?.textContent || '';
-    const cloneHTML = preview.innerHTML;
+    const patternAbs = new URL('Pattern.svg', window.location.href).href;
+    const cloneHTML = preview.innerHTML.replace(/Pattern\.svg/g, patternAbs);
     const win = window.open('');
     if (win) {
       win.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Print</title>
+      <base href="${window.location.href}">
       <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;900&display=swap" rel="stylesheet">
       <style>${baseStyle}</style>
       </head><body data-tab="columns">
