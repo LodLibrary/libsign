@@ -16,6 +16,7 @@
 :root {
   --font: 'Assistant', Arial, sans-serif;
   --radius: 8px;
+  --inner-guide-height: 15mm; /* 1.5cm guide for card inner frame */
   --ui-bg: #f4f5f7;
   --panel-bg: #ffffff;
   --border: #dde0e6;
@@ -428,7 +429,7 @@ html, body {
   -webkit-print-color-adjust: exact;
   background: #ffffff;
   color: #2956AA;
-  border: 0.5px dashed #799DDE;
+  border: none; /* keep only inner frame */
 }
 
 .sign-card .fold {
@@ -437,7 +438,8 @@ html, body {
 }
 
 .sign-card .text-zone {
-  min-height: 15mm;
+  height: var(--inner-guide-height);
+  min-height: var(--inner-guide-height);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -520,15 +522,15 @@ html, body {
   -webkit-print-color-adjust: exact;
   background: #ffffff;
   color: #2956AA;
-  border: 0.5px dashed #799DDE;
+  border: none; /* keep only inner frame */
 }
 .letter-card .fold {
   height: 7.5mm;
   flex-shrink: 0;
 }
 .letter-card .text-zone {
-  height: 15mm;
-  min-height: 15mm;
+  height: var(--inner-guide-height);
+  min-height: var(--inner-guide-height);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -554,7 +556,7 @@ html, body {
   position: absolute;
   width: 35mm;
   height: 30mm;
-  border: 0.5px dashed #799DDE;
+  border: none;
   background: #fff;
   border-radius: 2px;
 }
