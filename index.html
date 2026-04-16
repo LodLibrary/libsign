@@ -417,14 +417,12 @@ html, body {
 }
 
 /* ===== SHARED CARD STYLES (screen + print) ===== */
-.sign-card {
+.sign-card,
+.letter-card {
   display: inline-flex;
   flex-direction: column;
-  min-width: 60mm;
-  max-width: 250mm;
-  min-height: 30mm;
+  height: 30mm;
   flex-shrink: 0;
-  direction: rtl;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
   background: #ffffff;
@@ -432,12 +430,19 @@ html, body {
   border: none; /* keep only inner frame */
 }
 
+.sign-card {
+  min-width: 60mm;
+  max-width: 250mm;
+  direction: rtl;
+}
+
 .sign-card .fold {
   height: 7.5mm;
   flex-shrink: 0;
 }
 
-.sign-card .text-zone {
+.sign-card .text-zone,
+.letter-card .text-zone {
   height: var(--inner-guide-height);
   min-height: var(--inner-guide-height);
   flex-shrink: 0;
@@ -499,7 +504,8 @@ html, body {
   border-inline-end: 0.5px dashed #799DDE;
 }
 .sign-card .text-zone.tasa { padding: 2mm 0; }
-.sign-card .text-content {
+.sign-card .text-content,
+.letter-card .text-content {
   flex: 1;
   display: flex;
   align-items: center;
@@ -513,35 +519,14 @@ html, body {
 /* ===== PRINT STYLES ===== */
 /* ===== LETTER CARD (square) ===== */
 .letter-card {
-  display: inline-flex;
-  flex-direction: column;
   width: 35mm;
-  height: 30mm;
-  flex-shrink: 0;
-  print-color-adjust: exact;
-  -webkit-print-color-adjust: exact;
-  background: #ffffff;
-  color: #2956AA;
-  border: none; /* keep only inner frame */
 }
 .letter-card .fold {
   height: 7.5mm;
   flex-shrink: 0;
 }
 .letter-card .text-zone {
-  height: var(--inner-guide-height);
-  min-height: var(--inner-guide-height);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2mm 5mm;
-  white-space: nowrap;
-  border-top: 0.5px dashed #799DDE;
-  border-bottom: 0.5px dashed #799DDE;
-  font-size: 36pt;
   font-weight: 600;
-  line-height: 1.2;
   text-transform: uppercase;
 }
 
@@ -1661,7 +1646,7 @@ function clearLetters() {
 function buildLetterCardHTML(ch) {
   return `<div class="letter-card">
   <div class="fold"></div>
-  <div class="text-zone">${escHtml(ch)}</div>
+  <div class="text-zone"><div class="text-content">${escHtml(ch)}</div></div>
   <div class="fold"></div>
 </div>`;
 }
