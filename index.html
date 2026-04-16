@@ -504,8 +504,7 @@ html, body {
   border-inline-end: 0.5px dashed #799DDE;
 }
 .sign-card .text-zone.tasa { padding: 2mm 0; }
-.sign-card .text-content,
-.letter-card .text-content {
+.sign-card .text-content {
   flex: 1;
   display: flex;
   align-items: center;
@@ -1646,7 +1645,7 @@ function clearLetters() {
 function buildLetterCardHTML(ch) {
   return `<div class="letter-card">
   <div class="fold"></div>
-  <div class="text-zone"><div class="text-content">${escHtml(ch)}</div></div>
+  <div class="text-zone">${escHtml(ch)}</div>
   <div class="fold"></div>
 </div>`;
 }
