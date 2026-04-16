@@ -401,7 +401,7 @@ html, body {
   display: flex;
   flex-wrap: wrap;
   align-content: start;
-  column-gap: 4mm;
+  column-gap: 0;
   row-gap: 0;
 }
 
@@ -1235,7 +1235,7 @@ async function printAgeRendered() {
   .a4-page {
     width: 283mm;
     display: flex; flex-wrap: wrap; align-content: start;
-    column-gap: 4mm; row-gap: 0;
+    column-gap: 0; row-gap: 0;
     page-break-after: always;
   }
   .a4-page:last-child { page-break-after: avoid; }
@@ -1347,7 +1347,7 @@ async function printLettersExpanded() {
   .a4-page {
     width: 283mm;
     display: flex; flex-wrap: wrap; align-content: start;
-    column-gap: 4mm; row-gap: 0;
+    column-gap: 0; row-gap: 0;
     page-break-after: always;
   }
   .a4-page:last-child { page-break-after: avoid; }
@@ -1518,7 +1518,7 @@ async function paginateCards() {
   Object.assign(temp.style, {
     position: 'absolute', visibility: 'hidden', top: '0', left: '0',
     width: '283mm', display: 'flex', flexWrap: 'wrap',
-    columnGap: '4mm', rowGap: '0mm', alignContent: 'start',
+    columnGap: '0mm', rowGap: '0mm', alignContent: 'start',
     zIndex: '-9999',
   });
   temp.innerHTML = cards.map(buildCardHTML).join('');
@@ -1657,7 +1657,7 @@ async function paginateLetters() {
   Object.assign(temp.style, {
     position: 'absolute', visibility: 'hidden', top: '0', left: '0',
     width: '283mm', display: 'flex', flexWrap: 'wrap',
-    columnGap: '4mm', rowGap: '0mm', alignContent: 'start',
+    columnGap: '0mm', rowGap: '0mm', alignContent: 'start',
     zIndex: '-9999',
   });
   temp.innerHTML = all.map(buildLetterCardHTML).join('');
