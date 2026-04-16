@@ -327,17 +327,6 @@ html, body {
     animation: slideInItem .3s ease both;
   }
 
-  /* Letter stack hover */
-  .letter-stack {
-    transition: transform .2s cubic-bezier(.34,1.56,.64,1);
-  }
-  .letter-stack:hover {
-    transform: scale(1.06) rotate(-1deg);
-  }
-  .letter-stack .stack-badge {
-    animation: popIn .3s cubic-bezier(.34,1.56,.64,1) both;
-  }
-
   /* Divider fade-in */
   .divider {
     animation: fadeScaleIn .4s ease both;
@@ -526,38 +515,6 @@ html, body {
   flex-shrink: 0;
 }
 
-/* Letter stack preview (screen only) */
-.letter-stack {
-  position: relative;
-  display: inline-block;
-  margin: 3mm;
-}
-.letter-stack .letter-card { position: relative; }
-.letter-stack .stack-shadow {
-  position: absolute;
-  width: 35mm;
-  height: 30mm;
-  border: none;
-  background: #fff;
-  border-radius: 2px;
-}
-.letter-stack .stack-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: #2956AA;
-  color: #fff;
-  font-size: .7rem;
-  font-weight: 700;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-}
-
 @media print {
 
   .app-header,
@@ -590,16 +547,10 @@ html, body {
     -webkit-print-color-adjust: exact;
   }
 
-  .letter-stack { display: inline-block; margin: 0; }
-  .stack-shadow, .stack-badge { display: none !important; }
-
   /* ----- Tab-aware print visibility ----- */
   body[data-tab="age"]     #preview-columns, body[data-tab="age"]     #preview-letters { display: none !important; }
   body[data-tab="columns"] #preview-pane,    body[data-tab="columns"] #preview-letters { display: none !important; }
   body[data-tab="letters"] #preview-pane,    body[data-tab="letters"] #preview-columns { display: none !important; }
-  body[data-tab="letters"] #preview-letters .letter-stack { margin: 0; }
-  body[data-tab="letters"] #preview-letters .stack-shadow,
-  body[data-tab="letters"] #preview-letters .stack-badge { display: none !important; }
   body[data-tab="columns"] #preview-columns > * { display: block !important; }
   body[data-tab="columns"] .col-preview-wrapper {
     padding: 0 !important;
@@ -1639,8 +1590,8 @@ function clearLetters() {
   }
 }
 
-function buildLetterCardHTML(ch) {
-  return `<div class="letter-card">
+function buildLetterCardHTML(ch, i = 0) {
+  return `<div class="letter-card" style="--i:${i};">
   <div class="fold"></div>
   <div class="text-zone"><span class="series-name">${escHtml(ch)}</span></div>
   <div class="fold"></div>
@@ -1725,21 +1676,12 @@ function renderLetters() {
     return;
   }
 
-  // Screen preview: show stacks
-  const stacks = letterCards.map(e => {
-    const shadowCount = Math.min(e.qty - 1, 3);
-    let shadows = '';
-    for (let s = shadowCount; s > 0; s--) {
-      shadows += `<div class="stack-shadow" style="top:${s * 2}px;left:${s * 2}px;z-index:${-s};"></div>`;
-    }
-    const badge = e.qty > 1 ? `<div class="stack-badge">${e.qty}</div>` : '';
-    return `<div class="letter-stack">
-      ${shadows}
-      ${badge}
-      ${buildLetterCardHTML(e.char)}
-    </div>`;
-  }).join('');
-  pane.innerHTML = `<div class="a4-page" style="display:flex;flex-wrap:wrap;align-content:start;gap:2mm;padding:10mm;">${stacks}</div>`;
+  paginateLetters().then(pages => {
+    let idx = 0;
+    pane.innerHTML = pages.map(pageChars =>
+      `<div class="a4-page a4-landscape">${pageChars.map(ch => buildLetterCardHTML(ch, idx++)).join('\n')}</div>`
+    ).join('\n');
+  });
 }
 
 async function saveLettersPDF() {
