@@ -509,10 +509,14 @@ html, body {
 /* ===== LETTER CARD (square) ===== */
 .letter-card {
   width: 35mm;
+  height: var(--inner-guide-height);
 }
 .letter-card .fold {
-  height: 7.5mm;
-  flex-shrink: 0;
+  display: none;
+}
+.letter-card .text-zone {
+  height: 100%;
+  min-height: 100%;
 }
 
 @media print {
@@ -1633,9 +1637,7 @@ function clearLetters() {
 
 function buildLetterCardHTML(ch, i = 0) {
   return `<div class="letter-card" style="--i:${i};">
-  <div class="fold"></div>
   <div class="text-zone"><span class="series-name">${escHtml(ch)}</span></div>
-  <div class="fold"></div>
 </div>`;
 }
 
