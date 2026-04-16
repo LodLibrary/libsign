@@ -347,7 +347,7 @@ html, body {
     width: 210mm;
     min-height: 297mm;
     background: #fff;
-    padding: 10mm;
+    padding: 10mm 7mm;
     box-shadow: 0 4px 24px rgba(0,0,0,.3);
     transition: box-shadow .3s, transform .3s;
     animation: fadeScaleIn .4s ease both;
@@ -402,7 +402,7 @@ html, body {
   flex-wrap: wrap;
   align-content: start;
   column-gap: 4mm;
-  row-gap: 6mm;
+  row-gap: 0;
 }
 
 /* ===== SHARED CARD STYLES (screen + print) ===== */
@@ -1228,14 +1228,14 @@ async function printAgeRendered() {
 <html lang="he" dir="rtl"><head><meta charset="UTF-8"/>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4 landscape; margin: 10mm; }
+  @page { size: A4 landscape; margin: 10mm 7mm; }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: white; font-family: 'Assistant', Arial, sans-serif; }
   ${cardCSS}
   .a4-page {
-    width: 277mm;
+    width: 283mm;
     display: flex; flex-wrap: wrap; align-content: start;
-    column-gap: 4mm; row-gap: 6mm;
+    column-gap: 4mm; row-gap: 0;
     page-break-after: always;
   }
   .a4-page:last-child { page-break-after: avoid; }
@@ -1340,14 +1340,14 @@ async function printLettersExpanded() {
 <html lang="he" dir="rtl"><head><meta charset="UTF-8"/>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4 landscape; margin: 10mm; }
+  @page { size: A4 landscape; margin: 10mm 7mm; }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: white; font-family: 'Assistant', Arial, sans-serif; }
   ${cardCSS}
   .a4-page {
-    width: 277mm;
+    width: 283mm;
     display: flex; flex-wrap: wrap; align-content: start;
-    column-gap: 4mm; row-gap: 6mm;
+    column-gap: 4mm; row-gap: 0;
     page-break-after: always;
   }
   .a4-page:last-child { page-break-after: avoid; }
@@ -1517,8 +1517,8 @@ async function paginateCards() {
   const temp = document.createElement('div');
   Object.assign(temp.style, {
     position: 'absolute', visibility: 'hidden', top: '0', left: '0',
-    width: '277mm', display: 'flex', flexWrap: 'wrap',
-    columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
+    width: '283mm', display: 'flex', flexWrap: 'wrap',
+    columnGap: '4mm', rowGap: '0mm', alignContent: 'start',
     zIndex: '-9999',
   });
   temp.innerHTML = cards.map(buildCardHTML).join('');
@@ -1656,8 +1656,8 @@ async function paginateLetters() {
   const temp = document.createElement('div');
   Object.assign(temp.style, {
     position: 'absolute', visibility: 'hidden', top: '0', left: '0',
-    width: '190mm', display: 'flex', flexWrap: 'wrap',
-    columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
+    width: '283mm', display: 'flex', flexWrap: 'wrap',
+    columnGap: '4mm', rowGap: '0mm', alignContent: 'start',
     zIndex: '-9999',
   });
   temp.innerHTML = all.map(buildLetterCardHTML).join('');
