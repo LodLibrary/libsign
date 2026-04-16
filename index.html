@@ -16,6 +16,7 @@
 :root {
   --font: 'Assistant', Arial, sans-serif;
   --radius: 8px;
+  --inner-guide-height: 15mm; /* 1.5cm guide for card inner frame */
   --ui-bg: #f4f5f7;
   --panel-bg: #ffffff;
   --border: #dde0e6;
@@ -326,17 +327,6 @@ html, body {
     animation: slideInItem .3s ease both;
   }
 
-  /* Letter stack hover */
-  .letter-stack {
-    transition: transform .2s cubic-bezier(.34,1.56,.64,1);
-  }
-  .letter-stack:hover {
-    transform: scale(1.06) rotate(-1deg);
-  }
-  .letter-stack .stack-badge {
-    animation: popIn .3s cubic-bezier(.34,1.56,.64,1) both;
-  }
-
   /* Divider fade-in */
   .divider {
     animation: fadeScaleIn .4s ease both;
@@ -357,7 +347,7 @@ html, body {
     width: 210mm;
     min-height: 297mm;
     background: #fff;
-    padding: 10mm;
+    padding: 10mm 7mm;
     box-shadow: 0 4px 24px rgba(0,0,0,.3);
     transition: box-shadow .3s, transform .3s;
     animation: fadeScaleIn .4s ease both;
@@ -411,33 +401,40 @@ html, body {
   display: flex;
   flex-wrap: wrap;
   align-content: start;
-  column-gap: 4mm;
-  row-gap: 6mm;
+  column-gap: 0;
+  row-gap: 0;
 }
 
 /* ===== SHARED CARD STYLES (screen + print) ===== */
-.sign-card {
+.sign-card,
+.letter-card {
   display: inline-flex;
   flex-direction: column;
-  min-width: 60mm;
-  max-width: 250mm;
-  min-height: 30mm;
+  height: 30mm;
   flex-shrink: 0;
-  direction: rtl;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
   background: #ffffff;
   color: #2956AA;
-  border: 0.5px dashed #799DDE;
+  border: none; /* keep only inner frame */
+}
+
+.sign-card {
+  min-width: 35mm;
+  max-width: 250mm;
+  width: fit-content;
+  height: var(--inner-guide-height);
+  direction: rtl;
 }
 
 .sign-card .fold {
-  height: 7.5mm;
-  flex-shrink: 0;
+  display: none;
 }
 
-.sign-card .text-zone {
-  min-height: 15mm;
+.sign-card .text-zone,
+.letter-card .text-zone {
+  height: var(--inner-guide-height);
+  min-height: var(--inner-guide-height);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -450,8 +447,13 @@ html, body {
   line-height: 1.2;
   overflow: visible;
 }
+.sign-card .text-zone {
+  height: 100%;
+  min-height: 100%;
+}
 
 .sign-card .series-name { font-weight: 600; text-transform: uppercase; }
+.letter-card .series-name { font-weight: 600; text-transform: uppercase; }
 .sign-card .separator   { font-weight: 400; opacity: .6; margin: 0 .15em; }
 .sign-card .author-name { font-weight: 400; text-transform: uppercase; }
 
@@ -496,7 +498,7 @@ html, body {
   align-self: stretch;
   border-inline-end: 0.5px dashed #799DDE;
 }
-.sign-card .text-zone.tasa { padding: 0; }
+.sign-card .text-zone.tasa { padding: 2mm 0; }
 .sign-card .text-content {
   flex: 1;
   display: flex;
@@ -511,67 +513,15 @@ html, body {
 /* ===== PRINT STYLES ===== */
 /* ===== LETTER CARD (square) ===== */
 .letter-card {
-  display: inline-flex;
-  flex-direction: column;
   width: 35mm;
-  height: 30mm;
-  flex-shrink: 0;
-  print-color-adjust: exact;
-  -webkit-print-color-adjust: exact;
-  background: #ffffff;
-  color: #2956AA;
-  border: 0.5px dashed #799DDE;
+  height: var(--inner-guide-height);
 }
 .letter-card .fold {
-  height: 7.5mm;
-  flex-shrink: 0;
+  display: none;
 }
 .letter-card .text-zone {
-  min-height: 15mm;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1mm 2.5mm;
-  white-space: nowrap;
-  border-top: 0.5px dashed #799DDE;
-  border-bottom: 0.5px dashed #799DDE;
-  font-size: 36pt;
-  font-weight: 600;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-/* Letter stack preview (screen only) */
-.letter-stack {
-  position: relative;
-  display: inline-block;
-  margin: 3mm;
-}
-.letter-stack .letter-card { position: relative; }
-.letter-stack .stack-shadow {
-  position: absolute;
-  width: 35mm;
-  height: 30mm;
-  border: 0.5px dashed #799DDE;
-  background: #fff;
-  border-radius: 2px;
-}
-.letter-stack .stack-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: #2956AA;
-  color: #fff;
-  font-size: .7rem;
-  font-weight: 700;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
+  height: 100%;
+  min-height: 100%;
 }
 
 @media print {
@@ -606,16 +556,10 @@ html, body {
     -webkit-print-color-adjust: exact;
   }
 
-  .letter-stack { display: inline-block; margin: 0; }
-  .stack-shadow, .stack-badge { display: none !important; }
-
   /* ----- Tab-aware print visibility ----- */
   body[data-tab="age"]     #preview-columns, body[data-tab="age"]     #preview-letters { display: none !important; }
   body[data-tab="columns"] #preview-pane,    body[data-tab="columns"] #preview-letters { display: none !important; }
   body[data-tab="letters"] #preview-pane,    body[data-tab="letters"] #preview-columns { display: none !important; }
-  body[data-tab="letters"] #preview-letters .letter-stack { margin: 0; }
-  body[data-tab="letters"] #preview-letters .stack-shadow,
-  body[data-tab="letters"] #preview-letters .stack-badge { display: none !important; }
   body[data-tab="columns"] #preview-columns > * { display: block !important; }
   body[data-tab="columns"] .col-preview-wrapper {
     padding: 0 !important;
@@ -627,8 +571,10 @@ html, body {
     transform: none !important;
   }
   body[data-tab="columns"] #column-sign {
-    zoom: 0.5;
+    zoom: 0.6666667;
+    overflow: visible !important;
   }
+  body[data-tab="columns"] #column-sign svg { overflow: visible !important; }
 }
 </style>
 </head>
@@ -761,12 +707,20 @@ html, body {
 
       <div class="section-title" style="font-size:.8rem;opacity:.7;margin-top:0;margin-bottom:6px;">↑ עמודה עליונה</div>
       <div class="form-group">
-        <label for="col-range1-top">אות ראשונה (ימין)</label>
-        <input id="col-range1-top" type="text" placeholder="א" autocomplete="off" maxlength="1"/>
+        <label for="col-range1-top">ערך ראשון (ימין)</label>
+        <input id="col-range1-top" type="text" placeholder="א / 100" autocomplete="off"/>
       </div>
       <div class="form-group">
-        <label for="col-range2-top">אות אחרונה (שמאל)</label>
-        <input id="col-range2-top" type="text" placeholder="ת" autocomplete="off" maxlength="1"/>
+        <label for="col-sub1-top">תת טקסט (אופציונלי)</label>
+        <input id="col-sub1-top" type="text" placeholder=".233 / (9)" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label for="col-range2-top">ערך אחרון (שמאל)</label>
+        <input id="col-range2-top" type="text" placeholder="ת / 9999" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label for="col-sub2-top">תת טקסט (אופציונלי)</label>
+        <input id="col-sub2-top" type="text" placeholder=".233 / (9)" autocomplete="off"/>
       </div>
       <div class="form-group">
         <label for="col-cat-top">מחלקה</label>
@@ -777,12 +731,20 @@ html, body {
 
       <div class="section-title" style="font-size:.8rem;opacity:.7;margin-top:0;margin-bottom:6px;">↓ עמודה תחתונה</div>
       <div class="form-group">
-        <label for="col-range1-bot">אות ראשונה (ימין)</label>
-        <input id="col-range1-bot" type="text" placeholder="א" autocomplete="off" maxlength="1"/>
+        <label for="col-range1-bot">ערך ראשון (ימין)</label>
+        <input id="col-range1-bot" type="text" placeholder="א / 100" autocomplete="off"/>
       </div>
       <div class="form-group">
-        <label for="col-range2-bot">אות אחרונה (שמאל)</label>
-        <input id="col-range2-bot" type="text" placeholder="ת" autocomplete="off" maxlength="1"/>
+        <label for="col-sub1-bot">תת טקסט (אופציונלי)</label>
+        <input id="col-sub1-bot" type="text" placeholder=".233 / (9)" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label for="col-range2-bot">ערך אחרון (שמאל)</label>
+        <input id="col-range2-bot" type="text" placeholder="ת / 9999" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label for="col-sub2-bot">תת טקסט (אופציונלי)</label>
+        <input id="col-sub2-bot" type="text" placeholder=".233 / (9)" autocomplete="off"/>
       </div>
       <div class="form-group">
         <label for="col-cat-bot">מחלקה</label>
@@ -827,7 +789,7 @@ html, body {
   </aside>
 
   <!-- ===== PREVIEW AREA ===== -->
-  <div style="position:relative;overflow:hidden;display:flex;flex-direction:column;">
+  <div style="position:relative;overflow:visible;display:flex;flex-direction:column;">
 
     <!-- Age cards preview (existing) -->
     <main class="preview-pane" id="preview-pane" style="flex:1;">
@@ -839,7 +801,7 @@ html, body {
       <div class="col-preview-wrapper">
         <div class="col-sign-scaler">
 
-          <div id="column-sign" style="width:1684px;height:1190px;background:#fff;position:relative;overflow:hidden;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
+          <div id="column-sign" style="width:1684px;height:1190px;background:#fff;position:relative;overflow:visible;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
             <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:url('Pattern.svg') repeat 0 0 / 337px auto;opacity:0.15;pointer-events:none;"></div>
 
             <!-- Static SVG layer: arrows, divider, border (exact paths from design) -->
@@ -893,7 +855,7 @@ html, body {
 let cards = []; // { series, author, dir }
 let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
 let activeTab = 'age'; // 'age' | 'columns' | 'letters'
-let letterCards = []; // { char, qty }
+let letterCards = []; // { char }
 
 // ===== CATALOG (autocomplete from localStorage) =====
 function loadCatalog(key) {
@@ -1023,14 +985,13 @@ function switchTab(tab) {
   if (tab === 'letters') renderLetters();
 }
 
-// Render a single Hebrew letter into an SVG element as a pure vector path.
-// Uses an off-screen canvas to extract the glyph outline, then fits it
-// precisely into the SVG viewBox so every letter's top edge aligns uniformly.
+// Render column sign tokens (letters/numbers) into SVG with automatic fit.
+// Uses an off-screen canvas to measure visible pixel bounds precisely.
 const _glyphCache = {};
-function measureGlyph(letter) {
+function measureGlyph(text) {
   const font = '900 300px Assistant, Arial, sans-serif';
   const CW = 600, CH = 600;
-  const cacheKey = letter;
+  const cacheKey = text;
   if (_glyphCache[cacheKey]) return _glyphCache[cacheKey];
 
   const canvas = document.createElement('canvas');
@@ -1040,13 +1001,34 @@ function measureGlyph(letter) {
   ctx.textBaseline = 'alphabetic';
   ctx.clearRect(0, 0, CW, CH);
   ctx.fillStyle = '#000';
-  ctx.fillText(letter, 100, 420);
+  const drawX = 100, drawY = 420;
+  const m = ctx.measureText(text);
+  if (
+    Number.isFinite(m.actualBoundingBoxLeft) &&
+    Number.isFinite(m.actualBoundingBoxRight) &&
+    Number.isFinite(m.actualBoundingBoxAscent) &&
+    Number.isFinite(m.actualBoundingBoxDescent) &&
+    (m.actualBoundingBoxLeft + m.actualBoundingBoxRight) > 0
+  ) {
+    const bounds = {
+      minX: drawX - m.actualBoundingBoxLeft,
+      maxX: drawX + m.actualBoundingBoxRight,
+      minY: drawY - m.actualBoundingBoxAscent,
+      maxY: drawY + m.actualBoundingBoxDescent,
+      drawX,
+      drawY
+    };
+    _glyphCache[cacheKey] = bounds;
+    return bounds;
+  }
+
+  ctx.fillText(text, drawX, drawY);
   const imgData = ctx.getImageData(0, 0, CW, CH);
   const d = imgData.data;
   let minY = CH, maxY = 0, minX = CW, maxX = 0;
   for (let y = 0; y < CH; y++) {
     for (let x = 0; x < CW; x++) {
-      if (d[(y * CW + x) * 4 + 3] > 20) {
+      if (d[(y * CW + x) * 4 + 3] > 0) {
         if (y < minY) minY = y;
         if (y > maxY) maxY = y;
         if (x < minX) minX = x;
@@ -1054,73 +1036,78 @@ function measureGlyph(letter) {
       }
     }
   }
-  const bounds = { minX, minY, maxX, maxY, drawX: 100, drawY: 420 };
+  if (maxX < minX || maxY < minY) {
+    const fallback = { minX: 100, minY: 120, maxX: 460, maxY: 420, drawX, drawY };
+    _glyphCache[cacheKey] = fallback;
+    return fallback;
+  }
+  const bounds = { minX, minY, maxX, maxY, drawX, drawY };
   _glyphCache[cacheKey] = bounds;
   return bounds;
 }
-
-function renderLetterSVG(svgEl, letter, uniformGH) {
+function renderLetterSVG(svgEl, text, uniformGH, align = 'center', subText = '') {
   const W = 187, H = 231;
-  const font = '900 300px Assistant, Arial, sans-serif';
   const color = '#2956AA';
+  const subRatio = 0.3;
+  const baseText = String(text || '').trim();
+  const smallText = String(subText || '').trim();
+  const pad = 14;
+  const bleedPad = 28; // invisible frame bleed zone to avoid edge cuts
+  const fontSize = 280;
+  const subSize = Math.round(fontSize * subRatio);
+  const x = align === 'right' ? (W - pad) : align === 'left' ? pad : (W / 2);
+  const anchor = align === 'right' ? 'end' : align === 'left' ? 'start' : 'middle';
+  const y = 170;
+  const safeMain = escHtml(baseText || ' ');
+  const safeSub = escHtml(smallText);
+  const mainBounds = measureGlyph(baseText || ' ');
+  const mainScale = fontSize / 300;
+  const mainW = (mainBounds.maxX - mainBounds.minX + 1) * mainScale;
+  const mainH = (mainBounds.maxY - mainBounds.minY + 1) * mainScale;
+  const mainLeft = anchor === 'end' ? (x - mainW) : anchor === 'start' ? x : (x - mainW / 2);
+  const frameLeft = mainLeft - bleedPad;
+  const frameTop = y - mainH - bleedPad;
+  const frameRight = mainLeft + mainW + bleedPad;
+  const frameBottom = y + bleedPad;
+  const subGap = 8;
+  const subBounds = smallText ? measureGlyph(smallText) : null;
+  const subW = subBounds ? ((subBounds.maxX - subBounds.minX + 1) * (subSize / 300)) : 0;
+  const subRightX = frameRight + subGap + subW;
 
-  const bounds = measureGlyph(letter);
-  const gw = bounds.maxX - bounds.minX + 1;
-  const gh = bounds.maxY - bounds.minY + 1;
-
-  // Scale using the uniform height so all letters are the same size
-  const pad = 8;
-  const availW = W - pad * 2, availH = H - pad * 2;
-  const refH = uniformGH || gh;
-  const scale = Math.min(availW / gw, availH / refH);
-  const sw = gw * scale, sh = gh * scale;
-  // Center horizontally, align top uniformly
-  const ox = (W - sw) / 2;
-  const oy = pad + (availH - refH * scale) / 2;
-
-  // Draw the glyph onto a canvas at the needed scale
-  const bigCanvas = document.createElement('canvas');
-  bigCanvas.width = W; bigCanvas.height = H;
-  const bctx = bigCanvas.getContext('2d');
-  bctx.font = font;
-  bctx.textBaseline = 'alphabetic';
-  bctx.fillStyle = color;
-  const tx = ox - (bounds.minX - bounds.drawX) * scale;
-  const ty = oy - (bounds.minY - bounds.drawY) * scale;
-  bctx.setTransform(scale, 0, 0, scale, tx, ty);
-  bctx.fillText(letter, 0, 0);
-
-  const dataURL = bigCanvas.toDataURL('image/png');
+  svgEl.style.overflow = 'visible';
+  svgEl.setAttribute('overflow', 'visible');
   svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svgEl.innerHTML = `<image href="${dataURL}" width="${W}" height="${H}" />`;
+  const invisibleFrame = `<rect x="${frameLeft}" y="${frameTop}" width="${frameRight - frameLeft}" height="${frameBottom - frameTop}" fill="none" stroke="transparent"/>`;
+  const mainText = `<text x="${x}" y="${y}" fill="${color}" font-family="Assistant, Arial, sans-serif" font-weight="900" font-size="${fontSize}" text-anchor="${anchor}" dominant-baseline="alphabetic">${safeMain}</text>`;
+  const subTextEl = safeSub
+    ? `<text x="${subRightX}" y="${y + Math.round(subSize * 0.45)}" fill="${color}" font-family="Assistant, Arial, sans-serif" font-weight="900" font-size="${subSize}" text-anchor="end" dominant-baseline="alphabetic">${safeSub}</text>`
+    : '';
+  svgEl.innerHTML = `${invisibleFrame}${mainText}${subTextEl}`;
 }
 
 function updateColumnSign() {
   const r1Top  = document.getElementById('col-range1-top').value.trim().toUpperCase();
   const r2Top  = document.getElementById('col-range2-top').value.trim().toUpperCase();
+  const s1Top  = document.getElementById('col-sub1-top').value.trim();
+  const s2Top  = document.getElementById('col-sub2-top').value.trim();
   const catTop = document.getElementById('col-cat-top').value.trim() || 'מחלקה';
   const r1Bot  = document.getElementById('col-range1-bot').value.trim().toUpperCase();
   const r2Bot  = document.getElementById('col-range2-bot').value.trim().toUpperCase();
+  const s1Bot  = document.getElementById('col-sub1-bot').value.trim();
+  const s2Bot  = document.getElementById('col-sub2-bot').value.trim();
   const catBot = document.getElementById('col-cat-bot').value.trim() || 'מחלקה';
   document.getElementById('col-cat-top-el').textContent = catTop;
   document.getElementById('col-cat-bot-el').textContent = catBot;
 
-  const l1TopChar = r1Top.charAt(0) || 'א';
-  const l2TopChar = r2Top.charAt(0) || 'ת';
-  const l1BotChar = r1Bot.charAt(0) || 'א';
-  const l2BotChar = r2Bot.charAt(0) || 'ת';
+  const l1TopChar = r1Top || 'א';
+  const l2TopChar = r2Top || 'ת';
+  const l1BotChar = r1Bot || 'א';
+  const l2BotChar = r2Bot || 'ת';
 
-  // Measure all letters and use max glyph height for uniform sizing
-  const allChars = [l1TopChar, l2TopChar, l1BotChar, l2BotChar];
-  const maxGH = Math.max(...allChars.map(ch => {
-    const b = measureGlyph(ch);
-    return b.maxY - b.minY + 1;
-  }));
-
-  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar, maxGH);
-  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar, maxGH);
-  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar, maxGH);
-  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar, maxGH);
+  renderLetterSVG(document.getElementById('col-l1-top'), l1TopChar, null, 'left', s1Top);
+  renderLetterSVG(document.getElementById('col-l2-top'), l2TopChar, null, 'right', s2Top);
+  renderLetterSVG(document.getElementById('col-l1-bot'), l1BotChar, null, 'left', s1Bot);
+  renderLetterSVG(document.getElementById('col-l2-bot'), l2BotChar, null, 'right', s2Bot);
 
   // Arrow & section visibility
   const arrows = document.getElementById('col-arrows').value;
@@ -1250,14 +1237,14 @@ async function printAgeRendered() {
 <html lang="he" dir="rtl"><head><meta charset="UTF-8"/>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4 landscape; margin: 10mm; }
+  @page { size: A4 landscape; margin: 10mm 7mm; }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: white; font-family: 'Assistant', Arial, sans-serif; }
   ${cardCSS}
   .a4-page {
-    width: 277mm;
+    width: 283mm;
     display: flex; flex-wrap: wrap; align-content: start;
-    column-gap: 4mm; row-gap: 6mm;
+    column-gap: 0; row-gap: 0;
     page-break-after: always;
   }
   .a4-page:last-child { page-break-after: avoid; }
@@ -1288,7 +1275,7 @@ function extractCardCSS() {
     try {
       for (const rule of sheet.cssRules) {
         const sel = rule.selectorText || '';
-        if (sel.includes('.sign-card') || sel.includes('.tasa-strip') ||
+        if (sel.includes('.sign-card') || sel.includes('.letter-card') || sel.includes('.tasa-strip') ||
             sel.includes('.text-zone') || sel.includes('.text-content') ||
             sel.includes('.series-name') || sel.includes('.author-name') ||
             sel.includes('.separator') || sel.includes('.fold') ||
@@ -1316,7 +1303,11 @@ function handleCSV() {
     if (!letterCards.length) { alert('אין אותיות לייצוא'); return; }
     const BOM = '\uFEFF';
     const header = 'אות,כמות';
-    const rows = letterCards.map(e => '"' + e.char + '",' + e.qty);
+    const counts = letterCards.reduce((acc, e) => {
+      acc[e.char] = (acc[e.char] || 0) + 1;
+      return acc;
+    }, {});
+    const rows = Object.entries(counts).map(([char, qty]) => `"${String(char).replace(/"/g, '""')}",${qty}`);
     const csv = BOM + header + '\n' + rows.join('\n');
     downloadFile(csv, 'אותיות-מדף.csv', 'text/csv;charset=utf-8');
   } else {
@@ -1338,48 +1329,94 @@ function downloadFile(content, filename, type) {
 async function printLettersExpanded() {
   const pages = await paginateLetters();
   if (!pages.length) { alert('אין אותיות להדפסה'); return; }
-  const pane = document.getElementById('preview-letters');
-  const prevHTML = pane.innerHTML;
-  pane.innerHTML = pages.map(pageChars =>
-    `<div class="a4-page">${pageChars.map(buildLetterCardHTML).join('\n')}</div>`
-  ).join('\n');
-  await new Promise(r => requestAnimationFrame(r));
-  const s = document.createElement('style');
-  s.textContent = '@page { size: A4 portrait; margin: 10mm; }';
-  document.head.appendChild(s);
-  window.print();
-  s.remove();
-  pane.innerHTML = prevHTML;
+  const btn = document.querySelector('.btn-print');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ מכין...';
+  btn.disabled = true;
+
+  try {
+    await document.fonts.ready;
+    const cardCSS = extractCardCSS();
+    let idx = 0;
+    const pagesHtml = pages.map(pageChars =>
+      `<div class="a4-page a4-landscape">${pageChars.map(ch => buildLetterCardHTML(ch, idx++)).join('\n')}</div>`
+    ).join('\n');
+
+    const printWin = window.open('', '_blank');
+    if (!printWin) { window.print(); return; }
+
+    printWin.document.write(`<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 landscape; margin: 10mm 7mm; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: white; font-family: 'Assistant', Arial, sans-serif; }
+  ${cardCSS}
+  .a4-page {
+    width: 283mm;
+    display: flex; flex-wrap: wrap; align-content: start;
+    column-gap: 0; row-gap: 0;
+    page-break-after: always;
+  }
+  .a4-page:last-child { page-break-after: avoid; }
+  .letter-card, .letter-card * {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    animation: none !important;
+  }
+</style></head><body>${pagesHtml}</body></html>`);
+    printWin.document.close();
+
+    await printWin.document.fonts.ready;
+    await new Promise(r => setTimeout(r, 200));
+    printWin.focus();
+    printWin.print();
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
 }
 
 async function printColumnViaPDF() {
-  const sign = document.getElementById('column-sign');
-  const scaler = document.querySelector('.col-sign-scaler');
-  const prev = scaler.style.transform;
-  scaler.style.transform = 'none';
-  await document.fonts.ready;
-  await new Promise(r => requestAnimationFrame(r));
-  const canvas = await html2canvas(sign, {
-    scale: 2, useCORS: true, allowTaint: true,
-    backgroundColor: '#ffffff', logging: false,
-    width: 1684, height: 1190,
-  });
-  scaler.style.transform = prev;
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const W = 297, H = 210;
-  const imgData = canvas.toDataURL('image/png');
-  const imgH = (canvas.height / canvas.width) * W;
-  pdf.addImage(imgData, 'PNG', 0, Math.max(0, (H - imgH) / 2), W, Math.min(imgH, H));
-  const blob = pdf.output('blob');
-  const url = URL.createObjectURL(blob);
-  const win = window.open(url);
-  if (win) {
-    win.addEventListener('afterprint', () => { win.close(); URL.revokeObjectURL(url); });
-    win.onload = () => win.print();
-  } else {
-    // fallback: if popup blocked, download instead
-    pdf.save('שלט-עמודות.pdf');
+  const preview = document.getElementById('preview-columns');
+  if (!preview) return;
+  const btn = document.querySelector('.btn-print');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ מכין...';
+  btn.disabled = true;
+  try {
+    await document.fonts.ready;
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const baseStyle = document.querySelector('style')?.textContent || '';
+    const patternAbs = new URL('Pattern.svg', window.location.href).href;
+    const cloneHTML = preview.innerHTML
+      .replace(/Pattern\.svg/g, patternAbs)
+      .replace(
+        /opacity:\s*0\.15/g,
+        'opacity:0.42;filter:sepia(1) hue-rotate(165deg) saturate(4) brightness(0.85)'
+      );
+    const win = window.open('');
+    if (win) {
+      win.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Print</title>
+      <base href="${window.location.href}">
+      <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;900&display=swap" rel="stylesheet">
+      <style>${baseStyle}</style>
+      </head><body data-tab="columns">
+      <div class="preview-pane" id="preview-columns" style="display:block;flex:1;">${cloneHTML}</div>
+      </body></html>`);
+      win.document.close();
+      win.onload = async () => {
+        try { await win.document.fonts.ready; } catch {}
+        win.focus();
+        win.print();
+      };
+    } else {
+      window.print();
+    }
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
   }
 }
 
@@ -1489,8 +1526,8 @@ async function paginateCards() {
   const temp = document.createElement('div');
   Object.assign(temp.style, {
     position: 'absolute', visibility: 'hidden', top: '0', left: '0',
-    width: '277mm', display: 'flex', flexWrap: 'wrap',
-    columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
+    width: '283mm', display: 'flex', flexWrap: 'wrap',
+    columnGap: '0mm', rowGap: '0mm', alignContent: 'start',
     zIndex: '-9999',
   });
   temp.innerHTML = cards.map(buildCardHTML).join('');
@@ -1526,9 +1563,7 @@ function buildCardHTML(card) {
     ? `<div class="tasa-strip" style="background:${tasa}"></div><div class="text-content">${textSpans}</div>`
     : textSpans;
   return `<div class="sign-card" style="direction:${dir};--i:${card._i || 0};">
-  <div class="fold"></div>
   <div class="text-zone${tasa ? ' tasa' : ''}">${textZoneInner}</div>
-  <div class="fold"></div>
 </div>`;
 }
 
@@ -1582,7 +1617,9 @@ function addLetterCards() {
   const ch  = document.getElementById('inp-letter').value.trim().toUpperCase();
   const qty = parseInt(document.getElementById('inp-letter-qty').value) || 1;
   if (!ch) { alert('הכנס תו'); return; }
-  letterCards.push({ char: ch, qty });
+  for (let i = 0; i < qty; i++) {
+    letterCards.push({ char: ch });
+  }
   document.getElementById('inp-letter').value = '';
   document.getElementById('inp-letter-qty').value = '1';
   document.getElementById('inp-letter').focus();
@@ -1601,23 +1638,14 @@ function clearLetters() {
   }
 }
 
-function buildLetterCardHTML(ch) {
-  return `<div class="letter-card">
-  <div class="fold"></div>
-  <div class="text-zone">${escHtml(ch)}</div>
-  <div class="fold"></div>
+function buildLetterCardHTML(ch, i = 0) {
+  return `<div class="letter-card" style="--i:${i};">
+  <div class="text-zone"><span class="series-name">${escHtml(ch)}</span></div>
 </div>`;
 }
 
 function expandLetterCards() {
-  // Expand all entries to individual cards
-  const all = [];
-  for (const entry of letterCards) {
-    for (let i = 0; i < entry.qty; i++) {
-      all.push(entry.char);
-    }
-  }
-  return all;
+  return letterCards.map(entry => entry.char);
 }
 
 async function paginateLetters() {
@@ -1633,8 +1661,8 @@ async function paginateLetters() {
   const temp = document.createElement('div');
   Object.assign(temp.style, {
     position: 'absolute', visibility: 'hidden', top: '0', left: '0',
-    width: '190mm', display: 'flex', flexWrap: 'wrap',
-    columnGap: '4mm', rowGap: '6mm', alignContent: 'start',
+    width: '283mm', display: 'flex', flexWrap: 'wrap',
+    columnGap: '0mm', rowGap: '0mm', alignContent: 'start',
     zIndex: '-9999',
   });
   temp.innerHTML = all.map(buildLetterCardHTML).join('');
@@ -1660,8 +1688,7 @@ async function paginateLetters() {
 }
 
 function renderLetters() {
-  const total = letterCards.reduce((s, e) => s + e.qty, 0);
-  document.getElementById('letter-count').textContent = total;
+  document.getElementById('letter-count').textContent = letterCards.length;
 
   // Sidebar list
   const list = document.getElementById('letter-list');
@@ -1673,7 +1700,6 @@ function renderLetters() {
         <span class="card-list-dot" style="background:#2956AA"></span>
         <span class="card-list-text">
           <span class="card-list-series">${escHtml(e.char)}</span>
-          <span class="card-list-author"> × ${e.qty}</span>
         </span>
         <button class="btn-del" title="מחק" onclick="removeLetter(${i})">✕</button>
       </div>`;
@@ -1687,21 +1713,12 @@ function renderLetters() {
     return;
   }
 
-  // Screen preview: show stacks
-  const stacks = letterCards.map(e => {
-    const shadowCount = Math.min(e.qty - 1, 3);
-    let shadows = '';
-    for (let s = shadowCount; s > 0; s--) {
-      shadows += `<div class="stack-shadow" style="top:${s * 2}px;left:${s * 2}px;z-index:${-s};"></div>`;
-    }
-    const badge = e.qty > 1 ? `<div class="stack-badge">${e.qty}</div>` : '';
-    return `<div class="letter-stack">
-      ${shadows}
-      ${badge}
-      ${buildLetterCardHTML(e.char)}
-    </div>`;
-  }).join('');
-  pane.innerHTML = `<div class="a4-page" style="display:flex;flex-wrap:wrap;align-content:start;gap:2mm;padding:10mm;">${stacks}</div>`;
+  paginateLetters().then(pages => {
+    let idx = 0;
+    pane.innerHTML = pages.map(pageChars =>
+      `<div class="a4-page a4-landscape">${pageChars.map(ch => buildLetterCardHTML(ch, idx++)).join('\n')}</div>`
+    ).join('\n');
+  });
 }
 
 async function saveLettersPDF() {
@@ -1726,8 +1743,8 @@ async function saveLettersPDF() {
 
     const pageEls = pane.querySelectorAll('.a4-page');
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const A4_W = 210, A4_H = 297;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const A4_W = 297, A4_H = 210;
 
     for (let i = 0; i < pageEls.length; i++) {
       const canvas = await html2canvas(pageEls[i], {
@@ -1903,7 +1920,7 @@ renderSessions();
 render();
 updateColumnSign();
 
-['col-range1-top','col-range2-top','col-cat-top','col-range1-bot','col-range2-bot','col-cat-bot']
+['col-range1-top','col-sub1-top','col-range2-top','col-sub2-top','col-cat-top','col-range1-bot','col-sub1-bot','col-range2-bot','col-sub2-bot','col-cat-bot']
   .forEach(id => document.getElementById(id).addEventListener('input', updateColumnSign));
 
 const _colPane = document.getElementById('preview-columns');
