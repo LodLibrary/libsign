@@ -1266,7 +1266,7 @@ function extractCardCSS() {
     try {
       for (const rule of sheet.cssRules) {
         const sel = rule.selectorText || '';
-        if (sel.includes('.sign-card') || sel.includes('.tasa-strip') ||
+        if (sel.includes('.sign-card') || sel.includes('.letter-card') || sel.includes('.tasa-strip') ||
             sel.includes('.text-zone') || sel.includes('.text-content') ||
             sel.includes('.series-name') || sel.includes('.author-name') ||
             sel.includes('.separator') || sel.includes('.fold') ||
@@ -1320,18 +1320,53 @@ function downloadFile(content, filename, type) {
 async function printLettersExpanded() {
   const pages = await paginateLetters();
   if (!pages.length) { alert('אין אותיות להדפסה'); return; }
-  const pane = document.getElementById('preview-letters');
-  const prevHTML = pane.innerHTML;
-  pane.innerHTML = pages.map(pageChars =>
-    `<div class="a4-page">${pageChars.map(buildLetterCardHTML).join('\n')}</div>`
-  ).join('\n');
-  await new Promise(r => requestAnimationFrame(r));
-  const s = document.createElement('style');
-  s.textContent = '@page { size: A4 landscape; margin: 10mm; }';
-  document.head.appendChild(s);
-  window.print();
-  s.remove();
-  pane.innerHTML = prevHTML;
+  const btn = document.querySelector('.btn-print');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ מכין...';
+  btn.disabled = true;
+
+  try {
+    await document.fonts.ready;
+    const cardCSS = extractCardCSS();
+    let idx = 0;
+    const pagesHtml = pages.map(pageChars =>
+      `<div class="a4-page a4-landscape">${pageChars.map(ch => buildLetterCardHTML(ch, idx++)).join('\n')}</div>`
+    ).join('\n');
+
+    const printWin = window.open('', '_blank');
+    if (!printWin) { window.print(); return; }
+
+    printWin.document.write(`<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 landscape; margin: 10mm; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: white; font-family: 'Assistant', Arial, sans-serif; }
+  ${cardCSS}
+  .a4-page {
+    width: 277mm;
+    display: flex; flex-wrap: wrap; align-content: start;
+    column-gap: 4mm; row-gap: 6mm;
+    page-break-after: always;
+  }
+  .a4-page:last-child { page-break-after: avoid; }
+  .letter-card, .letter-card * {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    animation: none !important;
+  }
+</style></head><body>${pagesHtml}</body></html>`);
+    printWin.document.close();
+
+    await printWin.document.fonts.ready;
+    await new Promise(r => setTimeout(r, 200));
+    printWin.focus();
+    printWin.print();
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
 }
 
 async function printColumnViaPDF() {
