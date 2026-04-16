@@ -459,6 +459,7 @@ html, body {
 }
 
 .sign-card .series-name { font-weight: 600; text-transform: uppercase; }
+.letter-card .series-name { font-weight: 600; text-transform: uppercase; }
 .sign-card .separator   { font-weight: 400; opacity: .6; margin: 0 .15em; }
 .sign-card .author-name { font-weight: 400; text-transform: uppercase; }
 
@@ -523,10 +524,6 @@ html, body {
 .letter-card .fold {
   height: 7.5mm;
   flex-shrink: 0;
-}
-.letter-card .text-zone {
-  font-weight: 600;
-  text-transform: uppercase;
 }
 
 /* Letter stack preview (screen only) */
@@ -1645,7 +1642,7 @@ function clearLetters() {
 function buildLetterCardHTML(ch) {
   return `<div class="letter-card">
   <div class="fold"></div>
-  <div class="text-zone">${escHtml(ch)}</div>
+  <div class="text-zone"><span class="series-name">${escHtml(ch)}</span></div>
   <div class="fold"></div>
 </div>`;
 }
