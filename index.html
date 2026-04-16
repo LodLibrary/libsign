@@ -846,7 +846,7 @@ html, body {
 let cards = []; // { series, author, dir }
 let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
 let activeTab = 'age'; // 'age' | 'columns' | 'letters'
-let letterCards = []; // { char, qty }
+let letterCards = []; // { char }
 
 // ===== CATALOG (autocomplete from localStorage) =====
 function loadCatalog(key) {
@@ -1294,7 +1294,11 @@ function handleCSV() {
     if (!letterCards.length) { alert('אין אותיות לייצוא'); return; }
     const BOM = '\uFEFF';
     const header = 'אות,כמות';
-    const rows = letterCards.map(e => '"' + e.char + '",' + e.qty);
+    const counts = letterCards.reduce((acc, e) => {
+      acc[e.char] = (acc[e.char] || 0) + 1;
+      return acc;
+    }, {});
+    const rows = Object.entries(counts).map(([char, qty]) => `"${String(char).replace(/"/g, '""')}",${qty}`);
     const csv = BOM + header + '\n' + rows.join('\n');
     downloadFile(csv, 'אותיות-מדף.csv', 'text/csv;charset=utf-8');
   } else {
@@ -1571,7 +1575,9 @@ function addLetterCards() {
   const ch  = document.getElementById('inp-letter').value.trim().toUpperCase();
   const qty = parseInt(document.getElementById('inp-letter-qty').value) || 1;
   if (!ch) { alert('הכנס תו'); return; }
-  letterCards.push({ char: ch, qty });
+  for (let i = 0; i < qty; i++) {
+    letterCards.push({ char: ch });
+  }
   document.getElementById('inp-letter').value = '';
   document.getElementById('inp-letter-qty').value = '1';
   document.getElementById('inp-letter').focus();
@@ -1599,14 +1605,7 @@ function buildLetterCardHTML(ch, i = 0) {
 }
 
 function expandLetterCards() {
-  // Expand all entries to individual cards
-  const all = [];
-  for (const entry of letterCards) {
-    for (let i = 0; i < entry.qty; i++) {
-      all.push(entry.char);
-    }
-  }
-  return all;
+  return letterCards.map(entry => entry.char);
 }
 
 async function paginateLetters() {
@@ -1649,8 +1648,7 @@ async function paginateLetters() {
 }
 
 function renderLetters() {
-  const total = letterCards.reduce((s, e) => s + e.qty, 0);
-  document.getElementById('letter-count').textContent = total;
+  document.getElementById('letter-count').textContent = letterCards.length;
 
   // Sidebar list
   const list = document.getElementById('letter-list');
@@ -1662,7 +1660,6 @@ function renderLetters() {
         <span class="card-list-dot" style="background:#2956AA"></span>
         <span class="card-list-text">
           <span class="card-list-series">${escHtml(e.char)}</span>
-          <span class="card-list-author"> × ${e.qty}</span>
         </span>
         <button class="btn-del" title="מחק" onclick="removeLetter(${i})">✕</button>
       </div>`;
