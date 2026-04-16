@@ -420,14 +420,13 @@ html, body {
 }
 
 .sign-card {
-  min-width: 60mm;
-  max-width: 250mm;
+  width: 35mm;
+  height: var(--inner-guide-height);
   direction: rtl;
 }
 
 .sign-card .fold {
-  height: 7.5mm;
-  flex-shrink: 0;
+  display: none;
 }
 
 .sign-card .text-zone,
@@ -445,6 +444,10 @@ html, body {
   font-size: 36pt;
   line-height: 1.2;
   overflow: visible;
+}
+.sign-card .text-zone {
+  height: 100%;
+  min-height: 100%;
 }
 
 .sign-card .series-name { font-weight: 600; text-transform: uppercase; }
@@ -1558,9 +1561,7 @@ function buildCardHTML(card) {
     ? `<div class="tasa-strip" style="background:${tasa}"></div><div class="text-content">${textSpans}</div>`
     : textSpans;
   return `<div class="sign-card" style="direction:${dir};--i:${card._i || 0};">
-  <div class="fold"></div>
   <div class="text-zone${tasa ? ' tasa' : ''}">${textZoneInner}</div>
-  <div class="fold"></div>
 </div>`;
 }
 
