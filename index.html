@@ -129,6 +129,29 @@ html, body {
 
   .divider { border: none; border-top: 1px solid var(--border); }
 
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .tab-btn {
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: var(--font);
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .tab-panel[hidden] { display: none !important; }
+
   /* CSV upload */
   .csv-area {
     display: flex;
@@ -194,6 +217,45 @@ html, body {
     padding: 16px;
   }
 
+  .content-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .content-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .content-item-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .content-item-top input { width: 16px; height: 16px; }
+  .content-item-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    flex: 1;
+  }
+  .content-item-label img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+  .content-item-fields {
+    display: grid;
+    gap: 6px;
+    padding-inline-start: 24px;
+  }
+
   /* ----- Preview pane ----- */
   .preview-pane {
     overflow-y: auto;
@@ -249,6 +311,51 @@ html, body {
   opacity: .72;
 }
 
+.content-sticker {
+  width: 63mm;
+  height: 33mm;
+  border: 1px solid #d5d9e2;
+  border-radius: 6px;
+  background: #fff;
+  padding: 2mm;
+  display: flex;
+  flex-direction: column;
+  gap: 1mm;
+  overflow: hidden;
+}
+
+.content-label-item {
+  border: 1px solid #e2e6ef;
+  border-radius: 4px;
+  min-height: 9mm;
+  max-height: 10mm;
+  padding: 1mm 1.5mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .5mm;
+  line-height: 1.1;
+}
+
+.content-label-main {
+  display: flex;
+  align-items: center;
+  gap: 1.5mm;
+  font-size: 10pt;
+  font-weight: 700;
+}
+.content-label-main img {
+  width: 4.5mm;
+  height: 4.5mm;
+  object-fit: contain;
+}
+.content-label-level {
+  font-size: 8pt;
+}
+.content-label-subcategory {
+  font-size: 8pt;
+}
+
 /* ===== PRINT STYLES ===== */
 @media print {
   @page { size: A4 portrait; margin: 10mm; }
@@ -293,7 +400,12 @@ html, body {
 
   <!-- ===== SIDEBAR ===== -->
   <aside class="sidebar">
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-btn-age" onclick="setActiveTab('age')">כרטיסי גיל</button>
+      <button class="tab-btn" id="tab-btn-content" onclick="setActiveTab('content')">סימוני תוכן</button>
+    </div>
 
+    <div class="tab-panel" id="tab-age-panel">
     <!-- Add card form -->
     <div>
       <div class="section-title">הוסף כרטיס</div>
@@ -343,6 +455,12 @@ html, body {
         <div class="empty-hint">עדיין אין כרטיסים.<br/>הוסף למעלה או ייבא CSV.</div>
       </div>
     </div>
+    </div>
+
+    <div class="tab-panel" id="tab-content-panel" hidden>
+      <div class="section-title">סימוני תוכן</div>
+      <div class="content-items" id="content-items"></div>
+    </div>
 
   </aside>
 
@@ -376,6 +494,22 @@ const CATEGORY_LABELS = {
 const CARDS_PER_PAGE = 8; // 2 cols × 4 rows
 
 let cards = []; // { series, author, category }
+let activeTab = 'age';
+
+const CONTENT_DEFINITIONS = [
+  {
+    icon: 'content_icons/בריאות נפשית.svg',
+    label: 'בריאות נפשית',
+    subcategories: ['דיכאון', 'חרדה', 'הפרעות אכילה', 'אשפוז', 'טראומה']
+  },
+  {
+    icon: 'content_icons/אלימות.svg',
+    label: 'אלימות',
+    subcategories: ['רצח', 'פציעות', 'קרבות', 'אלימות גרפית']
+  }
+];
+
+let selectedContentLabels = [];
 
 // ===== HELPERS =====
 function escHtml(s) {
@@ -479,6 +613,117 @@ function splitCSVLine(line) {
   return result;
 }
 
+function getSelectedContentLabel(label) {
+  return selectedContentLabels.find(item => item.label === label);
+}
+
+function toggleContentLabel(label) {
+  const definition = CONTENT_DEFINITIONS.find(item => item.label === label);
+  if (!definition) return;
+  const idx = selectedContentLabels.findIndex(item => item.label === label);
+  if (idx >= 0) {
+    selectedContentLabels.splice(idx, 1);
+  } else {
+    selectedContentLabels.push({
+      label: definition.label,
+      icon: definition.icon,
+      level: 'מוזכר',
+      subcategory: null
+    });
+  }
+  render();
+}
+
+function updateContentLevel(label, level) {
+  const item = getSelectedContentLabel(label);
+  if (!item) return;
+  item.level = level;
+  render();
+}
+
+function updateContentSubcategory(label, subcategory) {
+  const item = getSelectedContentLabel(label);
+  if (!item) return;
+  item.subcategory = subcategory || null;
+  render();
+}
+
+function ContentLabelItem(definition) {
+  const selected = getSelectedContentLabel(definition.label);
+  const levels = ['מוזכר', 'מרומז', 'מובן'];
+  const hasSubcategories = Array.isArray(definition.subcategories) && definition.subcategories.length > 0;
+
+  return `<div class="content-item">
+    <div class="content-item-top">
+      <input type="checkbox" ${selected ? 'checked' : ''} onchange="toggleContentLabel('${escHtml(definition.label)}')"/>
+      <div class="content-item-label">
+        <img src="${escHtml(definition.icon)}" alt=""/>
+        <span>${escHtml(definition.label)}</span>
+      </div>
+    </div>
+    ${selected ? `<div class="content-item-fields">
+      <div class="form-group">
+        <label>רמת סימון</label>
+        <select onchange="updateContentLevel('${escHtml(definition.label)}', this.value)">
+          ${levels.map(level => `<option value="${escHtml(level)}" ${selected.level === level ? 'selected' : ''}>${escHtml(level)}</option>`).join('')}
+        </select>
+      </div>
+      ${hasSubcategories ? `<div class="form-group">
+        <label>תת־סוג</label>
+        <select onchange="updateContentSubcategory('${escHtml(definition.label)}', this.value)">
+          <option value="">ללא תת־סוג</option>
+          ${definition.subcategories.map(sub => `<option value="${escHtml(sub)}" ${selected.subcategory === sub ? 'selected' : ''}>${escHtml(sub)}</option>`).join('')}
+        </select>
+      </div>` : ''}
+    </div>` : ''}
+  </div>`;
+}
+
+function renderContentSelection() {
+  const container = document.getElementById('content-items');
+  container.innerHTML = CONTENT_DEFINITIONS.map(ContentLabelItem).join('');
+}
+
+function buildContentLabelStickerItem(item) {
+  return `<div class="content-label-item">
+    <div class="content-label-main">
+      <img src="${escHtml(item.icon)}" alt=""/>
+      <span>${escHtml(item.label)}</span>
+    </div>
+    <div class="content-label-level">(${escHtml(item.level)})</div>
+    ${item.subcategory ? `<div class="content-label-subcategory">${escHtml(item.subcategory)}</div>` : ''}
+  </div>`;
+}
+
+function chunkContentForStickers(items) {
+  if (!items.length) return [];
+  const stickers = [];
+  let current = [];
+  let used = 0;
+  const blockHeight = 9;
+  const stickerHeight = 33;
+  for (const item of items) {
+    if (used + blockHeight > stickerHeight && current.length) {
+      stickers.push(current);
+      current = [];
+      used = 0;
+    }
+    current.push(item);
+    used += blockHeight;
+  }
+  if (current.length) stickers.push(current);
+  return stickers;
+}
+
+function setActiveTab(tab) {
+  activeTab = tab === 'content' ? 'content' : 'age';
+  document.getElementById('tab-age-panel').hidden = activeTab !== 'age';
+  document.getElementById('tab-content-panel').hidden = activeTab !== 'content';
+  document.getElementById('tab-btn-age').classList.toggle('active', activeTab === 'age');
+  document.getElementById('tab-btn-content').classList.toggle('active', activeTab === 'content');
+  render();
+}
+
 // ===== RENDER =====
 function buildCardHTML(card) {
   const colors = COLORS[card.category] || COLORS['אחר'];
@@ -498,6 +743,7 @@ function chunk(arr, size) {
 }
 
 function render() {
+  renderContentSelection();
   // Update count
   document.getElementById('count').textContent = cards.length;
 
@@ -521,6 +767,22 @@ function render() {
 
   // Update preview pages
   const pane = document.getElementById('preview-pane');
+  if (activeTab === 'content') {
+    if (!selectedContentLabels.length) {
+      pane.innerHTML = `<div style="color:#ddd;font-size:1.2rem;margin-top:80px;text-align:center;">בחרי/בחר סימוני תוכן כדי לראות תצוגה מקדימה</div>`;
+      return;
+    }
+    const labelsPerSticker = chunkContentForStickers(selectedContentLabels);
+    const stickersPerPage = 8;
+    const pages = chunk(labelsPerSticker, stickersPerPage);
+    pane.innerHTML = pages.map(pageStickers =>
+      `<div class="a4-page" style="grid-template-columns:repeat(2, 63mm);grid-auto-rows:33mm;gap:4mm;justify-content:center;">
+        ${pageStickers.map(stickerItems => `<div class="content-sticker">${stickerItems.map(buildContentLabelStickerItem).join('')}</div>`).join('')}
+      </div>`
+    ).join('\n');
+    return;
+  }
+
   if (!cards.length) {
     pane.innerHTML = `<div style="color:#ddd;font-size:1.2rem;margin-top:80px;text-align:center;">הוסף כרטיסים כדי לראות תצוגה מקדימה</div>`;
     return;
