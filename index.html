@@ -1282,6 +1282,8 @@ function extractCardCSS() {
     try {
       for (const rule of sheet.cssRules) {
         const sel = rule.selectorText || '';
+        // Always include :root so CSS variables (--inner-guide-height etc.) are defined
+        if (sel === ':root') { relevant.push(rule.cssText); continue; }
         if (sel.includes('.sign-card') || sel.includes('.letter-card') || sel.includes('.tasa-strip') ||
             sel.includes('.text-zone') || sel.includes('.text-content') ||
             sel.includes('.series-name') || sel.includes('.author-name') ||
@@ -1295,6 +1297,9 @@ function extractCardCSS() {
       }
     } catch { /* cross-origin stylesheet */ }
   }
+  // Override --sign-card-width with the current user-set value (may differ from :root default)
+  const signWidth = document.documentElement.style.getPropertyValue('--sign-card-width');
+  if (signWidth) relevant.push(`:root { --sign-card-width: ${signWidth}; }`);
   return relevant.join('\n');
 }
 
