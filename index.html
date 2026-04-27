@@ -412,6 +412,8 @@ html, body {
   display: inline-flex;
   flex-direction: column;
   height: var(--inner-guide-height);
+  max-height: var(--inner-guide-height);
+  overflow: hidden;
   flex-shrink: 0;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
@@ -548,6 +550,9 @@ html, body {
   .a4-page:last-child { page-break-after: avoid; }
 
   .sign-card, .letter-card {
+    height: var(--inner-guide-height) !important;
+    max-height: var(--inner-guide-height) !important;
+    overflow: hidden !important;
     break-inside: avoid;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
