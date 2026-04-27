@@ -208,15 +208,19 @@ html, body {
   .a4-page {
     width: 210mm;
     min-height: 297mm;
-    background: #fff;
     padding: 10mm;
     box-shadow: 0 4px 24px rgba(0,0,0,.3);
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 60mm;
-    gap: 5mm;
-    align-content: start;
   }
+}
+
+/* ===== SHARED PAGE LAYOUT (screen + print) ===== */
+.a4-page {
+  background: #fff;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 60mm;
+  gap: 5mm;
+  align-content: start;
 }
 
 /* ===== SHARED CARD STYLES (screen + print) ===== */
@@ -273,7 +277,6 @@ html, body {
     box-shadow: none;
     padding: 0;
     page-break-after: always;
-    grid-auto-rows: 60mm;
   }
 
   .a4-page:last-child { page-break-after: avoid; }
