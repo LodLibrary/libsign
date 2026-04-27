@@ -17,6 +17,8 @@
   --font: 'Assistant', Arial, sans-serif;
   --radius: 8px;
   --inner-guide-height: 15mm; /* 1.5cm guide for card inner frame */
+  --sign-card-width: 35mm;
+  --letter-card-width: 35mm;
   --ui-bg: #f4f5f7;
   --panel-bg: #ffffff;
   --border: #dde0e6;
@@ -420,7 +422,7 @@ html, body {
 }
 
 .sign-card {
-  width: 35mm;
+  width: var(--sign-card-width);
   height: var(--inner-guide-height);
   direction: rtl;
 }
@@ -514,7 +516,7 @@ html, body {
 /* ===== PRINT STYLES ===== */
 /* ===== LETTER CARD (square) ===== */
 .letter-card {
-  width: 35mm;
+  width: var(--letter-card-width);
   height: var(--inner-guide-height);
 }
 .letter-card .fold {
@@ -648,6 +650,15 @@ html, body {
 
       <hr class="divider"/>
 
+      <!-- Card width control -->
+      <div class="form-group">
+        <label for="inp-sign-width">רוחב כרטיס (מ"מ)</label>
+        <input id="inp-sign-width" type="number" value="35" min="20" max="200" step="1"
+               oninput="setSignCardWidth(this.value)" style="width:100%;"/>
+      </div>
+
+      <hr class="divider"/>
+
       <!-- CSV import -->
       <div class="csv-area">
         <div class="section-title">ייבוא CSV</div>
@@ -768,6 +779,15 @@ html, body {
           <input id="inp-letter-qty" type="number" value="1" min="1" max="100"/>
         </div>
         <button class="btn btn-primary" onclick="addLetterCards()">+ הוסף</button>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- Card width control -->
+      <div class="form-group">
+        <label for="inp-letter-width">רוחב כרטיס (מ"מ)</label>
+        <input id="inp-letter-width" type="number" value="35" min="20" max="200" step="1"
+               oninput="setLetterCardWidth(this.value)" style="width:100%;"/>
       </div>
 
       <hr class="divider"/>
@@ -1553,6 +1573,19 @@ async function paginateCards() {
   return pages;
 }
 
+// ===== CARD WIDTH CONTROLS =====
+function setSignCardWidth(val) {
+  const mm = Math.max(20, Math.min(200, parseFloat(val) || 35));
+  document.documentElement.style.setProperty('--sign-card-width', mm + 'mm');
+  render();
+}
+
+function setLetterCardWidth(val) {
+  const mm = Math.max(20, Math.min(200, parseFloat(val) || 35));
+  document.documentElement.style.setProperty('--letter-card-width', mm + 'mm');
+  renderLetters();
+}
+
 // ===== RENDER =====
 function buildCardHTML(card) {
   const dir  = card.dir  || 'rtl';
@@ -1568,27 +1601,6 @@ function buildCardHTML(card) {
 </div>`;
 }
 
-
-function fitSignCardText() {
-  const pane = document.getElementById('preview-pane');
-  if (!pane) return;
-  pane.querySelectorAll('.sign-card').forEach(card => {
-    const zone = card.querySelector('.text-zone');
-    if (!zone) return;
-    const maxW = card.offsetWidth;
-    const maxH = card.offsetHeight;
-    let lo = 4, hi = 32;
-    zone.style.fontSize = hi + 'px';
-    if (zone.scrollWidth <= maxW && zone.scrollHeight <= maxH) return;
-    while (hi - lo > 0.25) {
-      const mid = (lo + hi) / 2;
-      zone.style.fontSize = mid + 'px';
-      if (zone.scrollWidth > maxW || zone.scrollHeight > maxH) hi = mid;
-      else lo = mid;
-    }
-    zone.style.fontSize = lo + 'px';
-  });
-}
 
 function render() {
   // Update count
@@ -1625,7 +1637,6 @@ function render() {
     pane.innerHTML = pages.map(pageCards =>
       `<div class="a4-page a4-landscape">${pageCards.map(c => buildCardHTML(Object.assign({}, c, { _i: idx++ }))).join('\n')}</div>`
     ).join('\n');
-    requestAnimationFrame(() => requestAnimationFrame(() => fitSignCardText()));
   });
 
   // Auto-save session (debounced)
