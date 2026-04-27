@@ -539,6 +539,8 @@ html, body {
     box-shadow: none;
     padding: 0;
     page-break-after: always;
+    transform: none !important;
+    margin-bottom: 0 !important;
   }
 
   .a4-page:last-child { page-break-after: avoid; }
@@ -1554,6 +1556,24 @@ async function paginateCards() {
   return pages;
 }
 
+// ===== PREVIEW SCALING =====
+function scalePreviewPages(paneId) {
+  const pane = document.getElementById(paneId);
+  if (!pane) return;
+  const pages = [...pane.querySelectorAll('.a4-page')];
+  if (!pages.length) return;
+  pages.forEach(p => { p.style.transform = ''; p.style.marginBottom = ''; });
+  const availW = pane.clientWidth - 48;
+  const pageW  = pages[0].offsetWidth;
+  if (pageW <= availW) return;
+  const scale = availW / pageW;
+  pages.forEach(p => {
+    p.style.transformOrigin = 'top center';
+    p.style.transform       = `scale(${scale})`;
+    p.style.marginBottom    = `${Math.round(p.offsetHeight * (scale - 1))}px`;
+  });
+}
+
 // ===== CARD WIDTH CONTROLS =====
 function setSignCardWidth(val) {
   const mm = Math.max(30, Math.min(200, parseFloat(val) || 30));
@@ -1613,6 +1633,7 @@ function render() {
     pane.innerHTML = pages.map(pageCards =>
       `<div class="a4-page a4-landscape">${pageCards.map(c => buildCardHTML(Object.assign({}, c, { _i: idx++ }))).join('\n')}</div>`
     ).join('\n');
+    requestAnimationFrame(() => scalePreviewPages('preview-pane'));
   });
 
   // Auto-save session (debounced)
@@ -1659,7 +1680,7 @@ function expandLetterCards() {
 }
 
 async function paginateLetters() {
-  const PAGE_H_MM = 277;
+  const PAGE_H_MM = 190; // a4-landscape: 210mm - 10mm top - 10mm bottom
   const MM_PX = 96 / 25.4;
   const pageHpx = PAGE_H_MM * MM_PX;
 
@@ -1728,6 +1749,7 @@ function renderLetters() {
     pane.innerHTML = pages.map(pageChars =>
       `<div class="a4-page a4-landscape">${pageChars.map(ch => buildLetterCardHTML(ch, idx++)).join('\n')}</div>`
     ).join('\n');
+    requestAnimationFrame(() => scalePreviewPages('preview-letters'));
   });
 }
 
@@ -1936,6 +1958,11 @@ updateColumnSign();
 const _colPane = document.getElementById('preview-columns');
 if (_colPane && window.ResizeObserver) {
   new ResizeObserver(updateColumnSignScale).observe(_colPane);
+}
+
+if (window.ResizeObserver) {
+  new ResizeObserver(() => scalePreviewPages('preview-pane')).observe(document.getElementById('preview-pane'));
+  new ResizeObserver(() => scalePreviewPages('preview-letters')).observe(document.getElementById('preview-letters'));
 }
 </script>
 </body>
