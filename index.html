@@ -1265,6 +1265,8 @@ async function printAgeRendered() {
 
     await printWin.document.fonts.ready;
     await new Promise(r => setTimeout(r, 200));
+    fitSignCardText(printWin.document);
+    await new Promise(r => setTimeout(r, 50));
     printWin.focus();
     printWin.print();
   } catch (e) {
@@ -1582,6 +1584,25 @@ function scalePreviewPages(paneId) {
   });
 }
 
+// ===== SIGN CARD TEXT FIT =====
+// Shrinks font-size until text fits within card width; never exceeds 36pt (48px).
+function fitSignCardText(root) {
+  const MAX_PX = 48; // 36pt at 96 dpi
+  (root || document).querySelectorAll('.sign-card').forEach(card => {
+    const zone = card.querySelector('.text-zone');
+    if (!zone) return;
+    zone.style.fontSize = MAX_PX + 'px';
+    if (zone.scrollWidth <= zone.offsetWidth) return;
+    let lo = 4, hi = MAX_PX;
+    while (hi - lo > 0.5) {
+      const mid = (lo + hi) / 2;
+      zone.style.fontSize = mid + 'px';
+      if (zone.scrollWidth <= zone.offsetWidth) lo = mid; else hi = mid;
+    }
+    zone.style.fontSize = lo + 'px';
+  });
+}
+
 // ===== CARD WIDTH CONTROLS =====
 function setSignCardWidth(val) {
   const mm = Math.max(30, Math.min(200, parseFloat(val) || 30));
@@ -1641,7 +1662,7 @@ function render() {
     pane.innerHTML = pages.map(pageCards =>
       `<div class="a4-page a4-landscape">${pageCards.map(c => buildCardHTML(Object.assign({}, c, { _i: idx++ }))).join('\n')}</div>`
     ).join('\n');
-    requestAnimationFrame(() => scalePreviewPages('preview-pane'));
+    requestAnimationFrame(() => { scalePreviewPages('preview-pane'); fitSignCardText(); });
   });
 
   // Auto-save session (debounced)
