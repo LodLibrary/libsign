@@ -17,8 +17,7 @@
   --font: 'Assistant', Arial, sans-serif;
   --radius: 8px;
   --inner-guide-height: 15mm; /* 1.5cm guide for card inner frame */
-  --sign-card-width: 35mm;
-  --letter-card-width: 35mm;
+  --sign-card-width: 30mm;
   --ui-bg: #f4f5f7;
   --panel-bg: #ffffff;
   --border: #dde0e6;
@@ -412,18 +411,17 @@ html, body {
 .letter-card {
   display: inline-flex;
   flex-direction: column;
-  height: 30mm;
+  height: var(--inner-guide-height);
   flex-shrink: 0;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
   background: #ffffff;
   color: #2956AA;
-  border: none; /* keep only inner frame */
+  border: none;
 }
 
 .sign-card {
   width: var(--sign-card-width);
-  height: var(--inner-guide-height);
   direction: rtl;
 }
 
@@ -443,16 +441,9 @@ html, body {
   white-space: nowrap;
   border-top: 0.5px dashed #799DDE;
   border-bottom: 0.5px dashed #799DDE;
+  font-size: 36pt;
   line-height: 1.2;
   overflow: hidden;
-}
-.letter-card .text-zone {
-  font-size: 36pt;
-}
-.sign-card .text-zone {
-  height: 100%;
-  min-height: 100%;
-  font-size: 16px; /* auto-scaled by fitSignCardText() */
 }
 
 .sign-card .series-name { font-weight: 600; text-transform: uppercase; }
@@ -516,8 +507,7 @@ html, body {
 /* ===== PRINT STYLES ===== */
 /* ===== LETTER CARD (square) ===== */
 .letter-card {
-  width: var(--letter-card-width);
-  height: var(--inner-guide-height);
+  width: 30mm;
 }
 .letter-card .fold {
   display: none;
@@ -653,7 +643,7 @@ html, body {
       <!-- Card width control -->
       <div class="form-group">
         <label for="inp-sign-width">רוחב כרטיס (מ"מ)</label>
-        <input id="inp-sign-width" type="number" value="35" min="20" max="200" step="1"
+        <input id="inp-sign-width" type="number" value="30" min="30" max="200" step="1"
                oninput="setSignCardWidth(this.value)" style="width:100%;"/>
       </div>
 
@@ -779,15 +769,6 @@ html, body {
           <input id="inp-letter-qty" type="number" value="1" min="1" max="100"/>
         </div>
         <button class="btn btn-primary" onclick="addLetterCards()">+ הוסף</button>
-      </div>
-
-      <hr class="divider"/>
-
-      <!-- Card width control -->
-      <div class="form-group">
-        <label for="inp-letter-width">רוחב כרטיס (מ"מ)</label>
-        <input id="inp-letter-width" type="number" value="35" min="20" max="200" step="1"
-               oninput="setLetterCardWidth(this.value)" style="width:100%;"/>
       </div>
 
       <hr class="divider"/>
@@ -1575,16 +1556,11 @@ async function paginateCards() {
 
 // ===== CARD WIDTH CONTROLS =====
 function setSignCardWidth(val) {
-  const mm = Math.max(20, Math.min(200, parseFloat(val) || 35));
+  const mm = Math.max(30, Math.min(200, parseFloat(val) || 30));
   document.documentElement.style.setProperty('--sign-card-width', mm + 'mm');
   render();
 }
 
-function setLetterCardWidth(val) {
-  const mm = Math.max(20, Math.min(200, parseFloat(val) || 35));
-  document.documentElement.style.setProperty('--letter-card-width', mm + 'mm');
-  renderLetters();
-}
 
 // ===== RENDER =====
 function buildCardHTML(card) {
