@@ -711,6 +711,14 @@ html, body {
         </select>
       </div>
 
+      <div class="form-group">
+        <label for="col-paper-size">גודל נייר</label>
+        <select id="col-paper-size" onchange="colPaperSize=this.value" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:14px;">
+          <option value="A4">A4</option>
+          <option value="A3">A3</option>
+        </select>
+      </div>
+
       <hr class="divider"/>
 
       <div class="section-title" style="font-size:.8rem;opacity:.7;margin-top:0;margin-bottom:6px;">↑ עמודה עליונה</div>
@@ -864,6 +872,7 @@ let cards = []; // { series, author, dir }
 let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
 let activeTab = 'age'; // 'age' | 'columns' | 'letters'
 let letterCards = []; // { char }
+let colPaperSize = 'A4';
 
 // ===== CATALOG (autocomplete from localStorage) =====
 function loadCatalog(key) {
@@ -1409,12 +1418,19 @@ async function printColumnViaPDF() {
         /opacity:\s*0\.15/g,
         'opacity:0.42;filter:sepia(1) hue-rotate(165deg) saturate(4) brightness(0.85)'
       );
+    // A4: zoom=0.6667 scales 1684×1190px → 297×210mm; A3 is √2 larger so zoom×√2
+    const isA3 = colPaperSize === 'A3';
+    const pageZoom = isA3 ? '0.9428' : '0.6667';
+    const paperCSS = `@page { size: ${colPaperSize} landscape; margin: 0; }
+      @media print { body[data-tab="columns"] #column-sign { zoom: ${pageZoom} !important; } }`;
+
     const win = window.open('');
     if (win) {
       win.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Print</title>
       <base href="${window.location.href}">
       <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;900&display=swap" rel="stylesheet">
       <style>${baseStyle}</style>
+      <style>${paperCSS}</style>
       </head><body data-tab="columns">
       <div class="preview-pane" id="preview-columns" style="display:block;flex:1;">${cloneHTML}</div>
       </body></html>`);
