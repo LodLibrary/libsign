@@ -449,7 +449,7 @@ html, body {
   overflow: hidden;
 }
 
-.letter-card .text-zone { font-size: 52pt; align-items: flex-start; padding-top: 0; padding-bottom: 0; }
+.letter-card .letter-svg { display: block; }
 
 .sign-card .series-name { font-weight: 600; text-transform: uppercase; }
 .letter-card .series-name { font-weight: 900; text-transform: uppercase; }
@@ -1680,7 +1680,20 @@ function clearLetters() {
 
 function buildLetterCardHTML(ch, i = 0) {
   return `<div class="letter-card" style="--i:${i};">
-  <div class="text-zone"><span class="series-name">${escHtml(ch)}</span></div>
+  <svg class="letter-svg" viewBox="0 0 30 15" width="30mm" height="15mm"
+       xmlns="http://www.w3.org/2000/svg" overflow="hidden">
+    <line x1="0" y1="0.066" x2="30" y2="0.066"
+          stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
+    <line x1="0" y1="14.934" x2="30" y2="14.934"
+          stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
+    <text x="15" y="2"
+          text-anchor="middle"
+          dominant-baseline="hanging"
+          font-family="'Assistant', Arial, sans-serif"
+          font-size="52pt"
+          font-weight="900"
+          fill="#2956AA">${escHtml(ch)}</text>
+  </svg>
 </div>`;
 }
 
