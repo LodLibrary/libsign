@@ -1679,6 +1679,8 @@ function clearLetters() {
 }
 
 function buildLetterCardHTML(ch, i = 0) {
+  // font-size in SVG user units (1 unit = 1mm here): 52pt × (25.4/72) ≈ 18.34mm
+  // Alphabetic baseline at y=15 (card bottom) → cap top sits at ~2mm from the card top
   return `<div class="letter-card" style="--i:${i};">
   <svg class="letter-svg" viewBox="0 0 30 15" width="30mm" height="15mm"
        xmlns="http://www.w3.org/2000/svg" overflow="hidden">
@@ -1686,11 +1688,10 @@ function buildLetterCardHTML(ch, i = 0) {
           stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
     <line x1="0" y1="14.934" x2="30" y2="14.934"
           stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
-    <text x="15" y="2"
+    <text x="15" y="15"
           text-anchor="middle"
-          dominant-baseline="hanging"
           font-family="'Assistant', Arial, sans-serif"
-          font-size="52pt"
+          font-size="18.34"
           font-weight="900"
           fill="#2956AA">${escHtml(ch)}</text>
   </svg>
