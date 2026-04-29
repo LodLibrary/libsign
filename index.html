@@ -879,6 +879,32 @@ let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
 let activeTab = 'age'; // 'age' | 'columns' | 'letters'
 let letterCards = []; // { char }
 let colPaperSize = 'A4';
+let letterSVGY = null; // calibrated baseline y — null until measured
+
+async function calibrateLetterSVGY() {
+  try { await document.fonts.load("900 52pt 'Assistant'"); } catch(e) {}
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 30 50');
+  svg.setAttribute('width', '30mm');
+  svg.setAttribute('height', '50mm');
+  Object.assign(svg.style, { position:'absolute', top:'0', left:'0', opacity:'0', pointerEvents:'none' });
+  const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  t.setAttribute('x', '15'); t.setAttribute('y', '25');
+  t.setAttribute('text-anchor', 'middle');
+  t.setAttribute('font-family', "'Assistant', Arial, sans-serif");
+  t.setAttribute('font-size', '18.34'); t.setAttribute('font-weight', '900');
+  t.textContent = 'א';
+  svg.appendChild(t);
+  document.body.appendChild(svg);
+  svg.getBoundingClientRect(); // force layout so getBBox is accurate
+  try {
+    const b = t.getBBox();
+    if (b.height > 0) letterSVGY = +(25 - b.y).toFixed(2);
+  } catch(e) {}
+  document.body.removeChild(svg);
+  if (letterSVGY === null) letterSVGY = 13;
+}
+const _letterCalib = calibrateLetterSVGY();
 
 // ===== CATALOG (autocomplete from localStorage) =====
 function loadCatalog(key) {
@@ -1701,7 +1727,20 @@ function clearLetters() {
 }
 
 function buildLetterCardHTML(ch, i = 0) {
-  return `<div class="letter-card" style="--i:${i};"><div style="position:absolute;top:0;left:0;width:30mm;height:15mm;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;font-size:52pt;font-weight:900;line-height:1;font-family:'Assistant',Arial,sans-serif;color:#000000;border-top:0.5px dashed #799DDE;border-bottom:0.5px dashed #799DDE;">${escHtml(ch)}</div></div>`;
+  const y = letterSVGY ?? 13;
+  return `<div class="letter-card" style="--i:${i};">
+  <svg class="letter-svg" viewBox="0 0 30 15" width="30mm" height="15mm"
+       xmlns="http://www.w3.org/2000/svg" overflow="hidden">
+    <line x1="0" y1="0.066" x2="30" y2="0.066"
+          stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
+    <line x1="0" y1="14.934" x2="30" y2="14.934"
+          stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
+    <text x="15" y="${y}" text-anchor="middle"
+          font-family="'Assistant', Arial, sans-serif"
+          font-size="18.34" font-weight="900"
+          fill="#000000">${escHtml(ch)}</text>
+  </svg>
+</div>`;
 }
 
 function expandLetterCards() {
@@ -1773,7 +1812,7 @@ function renderLetters() {
     return;
   }
 
-  paginateLetters().then(pages => {
+  _letterCalib.then(() => paginateLetters()).then(pages => {
     let idx = 0;
     pane.innerHTML = pages.map(pageChars =>
       `<div class="a4-page a4-landscape">${pageChars.map(ch => buildLetterCardHTML(ch, idx++)).join('\n')}</div>`
