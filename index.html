@@ -873,6 +873,34 @@ let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
 let activeTab = 'age'; // 'age' | 'columns' | 'letters'
 let letterCards = []; // { char }
 let colPaperSize = 'A4';
+let letterSVGY = 13; // calibrated y for SVG text — top of glyph at card top
+
+async function calibrateLetterSVGY() {
+  await document.fonts.ready;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 30 50');
+  svg.setAttribute('width', '30mm');
+  svg.setAttribute('height', '50mm');
+  Object.assign(svg.style, { position:'absolute', left:'-9999px', top:'0', visibility:'hidden' });
+  const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  t.setAttribute('x', '15');
+  t.setAttribute('y', '25');
+  t.setAttribute('text-anchor', 'middle');
+  t.setAttribute('font-family', "'Assistant', Arial, sans-serif");
+  t.setAttribute('font-size', '18.34');
+  t.setAttribute('font-weight', '900');
+  t.textContent = 'א';
+  svg.appendChild(t);
+  document.body.appendChild(svg);
+  try {
+    const bbox = t.getBBox();
+    // bbox.y is the top of the glyph when baseline is at y=25
+    // We want glyph top at y=0, so shift baseline by -bbox.y
+    letterSVGY = +(25 - bbox.y).toFixed(2);
+  } catch(e) {}
+  document.body.removeChild(svg);
+}
+calibrateLetterSVGY();
 
 // ===== CATALOG (autocomplete from localStorage) =====
 function loadCatalog(key) {
@@ -1702,9 +1730,8 @@ function buildLetterCardHTML(ch, i = 0) {
           stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
     <line x1="0" y1="14.934" x2="30" y2="14.934"
           stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
-    <text x="15" y="0"
+    <text x="15" y="${letterSVGY}"
           text-anchor="middle"
-          dominant-baseline="text-before-edge"
           font-family="'Assistant', Arial, sans-serif"
           font-size="18.34"
           font-weight="900"
