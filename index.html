@@ -17,6 +17,7 @@
   --font: 'Assistant', Arial, sans-serif;
   --radius: 8px;
   --inner-guide-height: 15mm; /* 1.5cm guide for card inner frame */
+  --sign-card-width: 30mm;
   --ui-bg: #f4f5f7;
   --panel-bg: #ffffff;
   --border: #dde0e6;
@@ -410,18 +411,20 @@ html, body {
 .letter-card {
   display: inline-flex;
   flex-direction: column;
-  height: 30mm;
+  height: var(--inner-guide-height);
+  max-height: var(--inner-guide-height);
+  overflow: hidden;
   flex-shrink: 0;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
   background: #ffffff;
-  color: #2956AA;
-  border: none; /* keep only inner frame */
+  color: #000000;
+  border: none;
 }
 
 .sign-card {
-  width: 35mm;
-  height: var(--inner-guide-height);
+  width: auto;
+  min-width: var(--sign-card-width);
   direction: rtl;
 }
 
@@ -443,15 +446,12 @@ html, body {
   border-bottom: 0.5px dashed #799DDE;
   font-size: 36pt;
   line-height: 1.2;
-  overflow: visible;
-}
-.sign-card .text-zone {
-  height: 100%;
-  min-height: 100%;
+  overflow: hidden;
 }
 
+
 .sign-card .series-name { font-weight: 600; text-transform: uppercase; }
-.letter-card .series-name { font-weight: 600; text-transform: uppercase; }
+.letter-card .series-name { font-weight: 900; text-transform: uppercase; }
 .sign-card .separator   { font-weight: 400; opacity: .6; margin: 0 .15em; }
 .sign-card .author-name { font-weight: 400; text-transform: uppercase; }
 
@@ -503,7 +503,7 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 0 5mm;
-  overflow: visible;
+  overflow: hidden;
   white-space: nowrap;
 }
 
@@ -511,15 +511,17 @@ html, body {
 /* ===== PRINT STYLES ===== */
 /* ===== LETTER CARD (square) ===== */
 .letter-card {
-  width: 35mm;
-  height: var(--inner-guide-height);
+  width: 30mm;
+  position: relative;
+}
+.letter-card .letter-svg {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 .letter-card .fold {
   display: none;
-}
-.letter-card .text-zone {
-  height: 100%;
-  min-height: 100%;
 }
 
 @media print {
@@ -544,11 +546,16 @@ html, body {
     box-shadow: none;
     padding: 0;
     page-break-after: always;
+    transform: none !important;
+    margin-bottom: 0 !important;
   }
 
   .a4-page:last-child { page-break-after: avoid; }
 
   .sign-card, .letter-card {
+    height: var(--inner-guide-height) !important;
+    max-height: var(--inner-guide-height) !important;
+    overflow: hidden !important;
     break-inside: avoid;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
@@ -645,6 +652,15 @@ html, body {
 
       <hr class="divider"/>
 
+      <!-- Card width control -->
+      <div class="form-group">
+        <label for="inp-sign-width">רוחב מינימלי (מ"מ)</label>
+        <input id="inp-sign-width" type="number" value="30" min="30" max="200" step="1"
+               oninput="setSignCardWidth(this.value)" style="width:100%;"/>
+      </div>
+
+      <hr class="divider"/>
+
       <!-- CSV import -->
       <div class="csv-area">
         <div class="section-title">ייבוא CSV</div>
@@ -698,6 +714,14 @@ html, body {
           <option value="both">שני החיצים</option>
           <option value="right">חץ ימינה בלבד ←</option>
           <option value="left">חץ שמאלה בלבד →</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="col-paper-size">גודל נייר</label>
+        <select id="col-paper-size" onchange="colPaperSize=this.value" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:14px;">
+          <option value="A4">A4</option>
+          <option value="A3">A3</option>
         </select>
       </div>
 
@@ -854,6 +878,38 @@ let cards = []; // { series, author, dir }
 let editingIdx = -1; // -1 = add mode, ≥0 = edit mode
 let activeTab = 'age'; // 'age' | 'columns' | 'letters'
 let letterCards = []; // { char }
+let colPaperSize = 'A4';
+let letterSVGY = null; // calibrated baseline y — null until measured
+let letterSVGFontSize = null; // calibrated font-size to fill card height
+
+async function calibrateLetterSVGY() {
+  try { await document.fonts.load("900 52pt 'Assistant'"); } catch(e) {}
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 30 50');
+  svg.setAttribute('width', '30mm');
+  svg.setAttribute('height', '50mm');
+  Object.assign(svg.style, { position:'absolute', top:'0', left:'0', opacity:'0', pointerEvents:'none' });
+  const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  t.setAttribute('x', '15'); t.setAttribute('y', '25');
+  t.setAttribute('text-anchor', 'middle');
+  t.setAttribute('font-family', "'Assistant', Arial, sans-serif");
+  t.setAttribute('font-size', '18.34'); t.setAttribute('font-weight', '900');
+  t.textContent = 'א';
+  svg.appendChild(t);
+  document.body.appendChild(svg);
+  svg.getBoundingClientRect(); // force layout so getBBox is accurate
+  try {
+    const b = t.getBBox();
+    if (b.height > 0) {
+      const scale = 15 / b.height; // scale so ink fills exactly 15mm card height
+      letterSVGFontSize = +(18.34 * scale).toFixed(2);
+      letterSVGY = +((25 - b.y) * scale).toFixed(2);
+    }
+  } catch(e) {}
+  document.body.removeChild(svg);
+  if (letterSVGY === null) { letterSVGY = 13; letterSVGFontSize = 18.34; }
+}
+const _letterCalib = calibrateLetterSVGY();
 
 // ===== CATALOG (autocomplete from localStorage) =====
 function loadCatalog(key) {
@@ -1273,6 +1329,8 @@ function extractCardCSS() {
     try {
       for (const rule of sheet.cssRules) {
         const sel = rule.selectorText || '';
+        // Always include :root so CSS variables (--inner-guide-height etc.) are defined
+        if (sel === ':root') { relevant.push(rule.cssText); continue; }
         if (sel.includes('.sign-card') || sel.includes('.letter-card') || sel.includes('.tasa-strip') ||
             sel.includes('.text-zone') || sel.includes('.text-content') ||
             sel.includes('.series-name') || sel.includes('.author-name') ||
@@ -1286,6 +1344,9 @@ function extractCardCSS() {
       }
     } catch { /* cross-origin stylesheet */ }
   }
+  // Override --sign-card-width with the current user-set value (may differ from :root default)
+  const signWidth = document.documentElement.style.getPropertyValue('--sign-card-width');
+  if (signWidth) relevant.push(`:root { --sign-card-width: ${signWidth}; }`);
   return relevant.join('\n');
 }
 
@@ -1394,12 +1455,19 @@ async function printColumnViaPDF() {
         /opacity:\s*0\.15/g,
         'opacity:0.42;filter:sepia(1) hue-rotate(165deg) saturate(4) brightness(0.85)'
       );
+    // A4: zoom=0.6667 scales 1684×1190px → 297×210mm; A3 is √2 larger so zoom×√2
+    const isA3 = colPaperSize === 'A3';
+    const pageZoom = isA3 ? '0.9428' : '0.6667';
+    const paperCSS = `@page { size: ${colPaperSize} landscape; margin: 0; }
+      @media print { body[data-tab="columns"] #column-sign { zoom: ${pageZoom} !important; } }`;
+
     const win = window.open('');
     if (win) {
       win.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Print</title>
       <base href="${window.location.href}">
       <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;900&display=swap" rel="stylesheet">
       <style>${baseStyle}</style>
+      <style>${paperCSS}</style>
       </head><body data-tab="columns">
       <div class="preview-pane" id="preview-columns" style="display:block;flex:1;">${cloneHTML}</div>
       </body></html>`);
@@ -1550,6 +1618,32 @@ async function paginateCards() {
   return pages;
 }
 
+// ===== PREVIEW SCALING =====
+function scalePreviewPages(paneId) {
+  const pane = document.getElementById(paneId);
+  if (!pane) return;
+  const pages = [...pane.querySelectorAll('.a4-page')];
+  if (!pages.length) return;
+  pages.forEach(p => { p.style.transform = ''; p.style.marginBottom = ''; });
+  const availW = pane.clientWidth - 48;
+  const pageW  = pages[0].offsetWidth;
+  if (pageW <= availW) return;
+  const scale = availW / pageW;
+  pages.forEach(p => {
+    p.style.transformOrigin = 'top center';
+    p.style.transform       = `scale(${scale})`;
+    p.style.marginBottom    = `${Math.round(p.offsetHeight * (scale - 1))}px`;
+  });
+}
+
+// ===== CARD WIDTH CONTROLS =====
+function setSignCardWidth(val) {
+  const mm = Math.max(30, Math.min(200, parseFloat(val) || 30));
+  document.documentElement.style.setProperty('--sign-card-width', mm + 'mm');
+  render();
+}
+
+
 // ===== RENDER =====
 function buildCardHTML(card) {
   const dir  = card.dir  || 'rtl';
@@ -1601,6 +1695,7 @@ function render() {
     pane.innerHTML = pages.map(pageCards =>
       `<div class="a4-page a4-landscape">${pageCards.map(c => buildCardHTML(Object.assign({}, c, { _i: idx++ }))).join('\n')}</div>`
     ).join('\n');
+    requestAnimationFrame(() => scalePreviewPages('preview-pane'));
   });
 
   // Auto-save session (debounced)
@@ -1637,8 +1732,20 @@ function clearLetters() {
 }
 
 function buildLetterCardHTML(ch, i = 0) {
+  const y = letterSVGY ?? 13;
+  const fs = letterSVGFontSize ?? 18.34;
   return `<div class="letter-card" style="--i:${i};">
-  <div class="text-zone"><span class="series-name">${escHtml(ch)}</span></div>
+  <svg class="letter-svg" viewBox="0 0 30 15" width="30mm" height="15mm"
+       xmlns="http://www.w3.org/2000/svg" overflow="hidden">
+    <line x1="0" y1="0.066" x2="30" y2="0.066"
+          stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
+    <line x1="0" y1="14.934" x2="30" y2="14.934"
+          stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
+    <text x="15" y="${y}" text-anchor="middle"
+          font-family="'Assistant', Arial, sans-serif"
+          font-size="${fs}" font-weight="900"
+          fill="#000000">${escHtml(ch)}</text>
+  </svg>
 </div>`;
 }
 
@@ -1647,7 +1754,7 @@ function expandLetterCards() {
 }
 
 async function paginateLetters() {
-  const PAGE_H_MM = 277;
+  const PAGE_H_MM = 190; // a4-landscape: 210mm - 10mm top - 10mm bottom
   const MM_PX = 96 / 25.4;
   const pageHpx = PAGE_H_MM * MM_PX;
 
@@ -1711,11 +1818,12 @@ function renderLetters() {
     return;
   }
 
-  paginateLetters().then(pages => {
+  _letterCalib.then(() => paginateLetters()).then(pages => {
     let idx = 0;
     pane.innerHTML = pages.map(pageChars =>
       `<div class="a4-page a4-landscape">${pageChars.map(ch => buildLetterCardHTML(ch, idx++)).join('\n')}</div>`
     ).join('\n');
+    requestAnimationFrame(() => scalePreviewPages('preview-letters'));
   });
 }
 
@@ -1924,6 +2032,11 @@ updateColumnSign();
 const _colPane = document.getElementById('preview-columns');
 if (_colPane && window.ResizeObserver) {
   new ResizeObserver(updateColumnSignScale).observe(_colPane);
+}
+
+if (window.ResizeObserver) {
+  new ResizeObserver(() => scalePreviewPages('preview-pane')).observe(document.getElementById('preview-pane'));
+  new ResizeObserver(() => scalePreviewPages('preview-letters')).observe(document.getElementById('preview-letters'));
 }
 </script>
 </body>
