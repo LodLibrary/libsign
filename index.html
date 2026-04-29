@@ -449,7 +449,6 @@ html, body {
   overflow: hidden;
 }
 
-.letter-card .letter-svg { display: block; }
 
 .sign-card .series-name { font-weight: 600; text-transform: uppercase; }
 .letter-card .series-name { font-weight: 900; text-transform: uppercase; }
@@ -513,6 +512,13 @@ html, body {
 /* ===== LETTER CARD (square) ===== */
 .letter-card {
   width: 30mm;
+  position: relative;
+}
+.letter-card .letter-svg {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 .letter-card .fold {
   display: none;
