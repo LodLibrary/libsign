@@ -880,6 +880,7 @@ let activeTab = 'age'; // 'age' | 'columns' | 'letters'
 let letterCards = []; // { char }
 let colPaperSize = 'A4';
 let letterSVGY = null; // calibrated baseline y — null until measured
+let letterSVGFontSize = null; // calibrated font-size to fill card height
 
 async function calibrateLetterSVGY() {
   try { await document.fonts.load("900 52pt 'Assistant'"); } catch(e) {}
@@ -899,10 +900,14 @@ async function calibrateLetterSVGY() {
   svg.getBoundingClientRect(); // force layout so getBBox is accurate
   try {
     const b = t.getBBox();
-    if (b.height > 0) letterSVGY = +(25 - b.y).toFixed(2);
+    if (b.height > 0) {
+      const scale = 15 / b.height; // scale so ink fills exactly 15mm card height
+      letterSVGFontSize = +(18.34 * scale).toFixed(2);
+      letterSVGY = +((25 - b.y) * scale).toFixed(2);
+    }
   } catch(e) {}
   document.body.removeChild(svg);
-  if (letterSVGY === null) letterSVGY = 13;
+  if (letterSVGY === null) { letterSVGY = 13; letterSVGFontSize = 18.34; }
 }
 const _letterCalib = calibrateLetterSVGY();
 
@@ -1728,6 +1733,7 @@ function clearLetters() {
 
 function buildLetterCardHTML(ch, i = 0) {
   const y = letterSVGY ?? 13;
+  const fs = letterSVGFontSize ?? 18.34;
   return `<div class="letter-card" style="--i:${i};">
   <svg class="letter-svg" viewBox="0 0 30 15" width="30mm" height="15mm"
        xmlns="http://www.w3.org/2000/svg" overflow="hidden">
@@ -1737,7 +1743,7 @@ function buildLetterCardHTML(ch, i = 0) {
           stroke="#799DDE" stroke-width="0.132" stroke-dasharray="1.5 1"/>
     <text x="15" y="${y}" text-anchor="middle"
           font-family="'Assistant', Arial, sans-serif"
-          font-size="18.34" font-weight="900"
+          font-size="${fs}" font-weight="900"
           fill="#000000">${escHtml(ch)}</text>
   </svg>
 </div>`;
